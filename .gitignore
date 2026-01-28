@@ -1,0 +1,237 @@
+# KMR Resume Enhancer - Root .gitignore
+
+# ==========================================
+# Operating System Files
+# ==========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ==========================================
+# IDE and Editor Files
+# ==========================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (PyCharm, WebStorm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+
+# Environment files (NEVER commit these!)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+
+# AWS credentials (double protection)
+.aws/
+aws-credentials.json
+credentials.json
+
+# API keys and secrets
+secrets/
+*.pem
+*.key
+*.cert
+
+# ==========================================
+# Frontend (Next.js) Specific
+# ==========================================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Production
+frontend/dist/
+
+# Testing
+frontend/coverage/
+frontend/.nyc_output/
+
+# Misc
+frontend/.turbo
+frontend/*.tsbuildinfo
+
+# ==========================================
+# Backend (Python/Lambda) Specific
+# ==========================================
+
+# Python
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+backend/env/
+backend/venv/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Distribution / packaging
+backend/dist/
+backend/build/
+backend/*.egg-info/
+backend/.eggs/
+backend/*.egg
+
+# PyInstaller
+backend/*.manifest
+backend/*.spec
+
+# Unit test / coverage
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/test-reports/
+
+# Lambda deployment packages
+backend/lambdas/**/package.zip
+backend/lambdas/**/*.zip
+backend/layers/**/*.zip
+
+# Lambda Layer dependencies
+backend/layers/python-dependencies/python/
+
+# Terraform state (if using Terraform)
+backend/infrastructure/terraform/.terraform/
+backend/infrastructure/terraform/*.tfstate
+backend/infrastructure/terraform/*.tfstate.*
+backend/infrastructure/terraform/.terraform.lock.hcl
+
+# ==========================================
+# Logs and Temporary Files
+# ==========================================
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ==========================================
+# Testing and Coverage
+# ==========================================
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Jest
+jest-results/
+
+# ==========================================
+# Documentation Build Output
+# ==========================================
+
+docs/_build/
+docs/.doctrees/
+
+# ==========================================
+# Package Manager Locks (Controversial - Team Decision)
+# ==========================================
+
+# Uncomment if you want to ignore lock files (NOT recommended for production)
+# frontend/package-lock.json
+# frontend/yarn.lock
+# frontend/pnpm-lock.yaml
+
+# ==========================================
+# Project Specific
+# ==========================================
+
+# Sample/test data (if large)
+backend/tests/fixtures/large_files/
+
+# Local scripts for personal use
+scripts/local/
+*.local.sh
+
+# Database dumps
+*.sql
+*.db
+*.sqlite
+
+# Notes and TODO (personal)
+TODO.md
+NOTES.md
+.scratch/
+
+# ==========================================
+# CI/CD and Deployment
+# ==========================================
+
+# Deployment artifacts
+deployment/
+deploy-*.zip
+
+# CDK (if using AWS CDK)
+cdk.out/
+.cdk.staging/
+
+# ==========================================
+# Backup Files
+# ==========================================
+
+*.bak
+*.backup
+*.old
+*-backup.*
+
+# ==========================================
+# Optional: Large Files (Git LFS)
+# ==========================================
+
+# If you use Git LFS for large files
+*.psd
+*.ai
+*.sketch
