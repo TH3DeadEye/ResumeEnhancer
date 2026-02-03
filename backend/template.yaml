@@ -13,6 +13,11 @@ Parameters:
       - prod
     Description: Deployment environment name
 
+Conditions:
+  IsProduction: !Equals
+    - !Ref Environment
+    - prod
+
 Resources:
   # ============================================================================
   # 1. Cognito User Pool
@@ -61,10 +66,13 @@ Resources:
       UserPoolTags:
         Environment: !Ref Environment
         Application: KMR-Resume-Enhancer
-    Conditions:
-      IsProduction: !Equals
-        - !Ref Environment
-        - prod
+
+  # Cognito Domain for Hosted UI
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub ${AWS::StackName}-${AWS::AccountId}
+      UserPoolId: !Ref UserPool
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -79,6 +87,22 @@ Resources:
         - ALLOW_REFRESH_TOKEN_AUTH
       SupportedIdentityProviders:
         - COGNITO
+      # OAuth Configuration
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - http://localhost:3000/authorize
+        - http://127.0.0.1:3000/authorize
+        - http://localhost:3000/callback
+      LogoutURLs:
+        - http://localhost:3000/logout
+        - http://127.0.0.1:3000/logout
+        - http://localhost:3000
       AccessTokenValidity: 1
       IdTokenValidity: 1
       RefreshTokenValidity: 30
@@ -157,7 +181,7 @@ Resources:
         - ResourceName: uploadHandler
       CodeUri: src/lambda
       Handler: upload.handler
-      Runtime: python3.11
+      Runtime: python3.13
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
@@ -194,6 +218,7 @@ Resources:
   # ============================================================================
   uploadBucket:
     Type: AWS::S3::Bucket
+    DependsOn: ExtractionHandlerS3Permission
     Properties:
       BucketName: !Sub ${AWS::StackName}-uploadbuc-${AWS::AccountId}
       BucketEncryption:
@@ -215,6 +240,18 @@ Resources:
             AllowedOrigins:
               - http://localhost:3000
             MaxAge: 3000
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt ExtractionHandler.Arn
+
+  ExtractionHandlerS3Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ExtractionHandler
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:s3:::${AWS::StackName}-uploadbuc-${AWS::AccountId}
 
   uploadBucketBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -254,7 +291,7 @@ Resources:
         - ResourceName: ExtractionHandler
       CodeUri: src/lambda
       Handler: extraction.handler
-      Runtime: python3.11
+      Runtime: python3.13
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
@@ -262,9 +299,10 @@ Resources:
         Variables:
           PARSED_BUCKET_NAME: !Ref ParsedText
           TABLE_NAME: !Ref ExtractionTextDB
+          UPLOAD_BUCKET_NAME: !Sub ${AWS::StackName}-uploadbuc-${AWS::AccountId}
       Policies:
         - S3ReadPolicy:
-            BucketName: !Ref uploadBucket
+            BucketName: !Sub ${AWS::StackName}-uploadbuc-${AWS::AccountId}
         - S3CrudPolicy:
             BucketName: !Ref ParsedText
         - DynamoDBCrudPolicy:
@@ -275,13 +313,7 @@ Resources:
                 - textract:DetectDocumentText
                 - textract:AnalyzeDocument
               Resource: '*'
-      Events:
-        uploadBucket:
-          Type: S3
-          Properties:
-            Bucket: !Ref uploadBucket
-            Events:
-              - s3:ObjectCreated:*
+
   ExtractionHandlerLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Retain
@@ -299,7 +331,7 @@ Resources:
         - ResourceName: ParserHandler
       CodeUri: src/lambda
       Handler: parser.handler
-      Runtime: python3.11
+      Runtime: python3.13
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
@@ -312,13 +344,6 @@ Resources:
             TableName: !Ref ExtractionTextDB
         - S3CrudPolicy:
             BucketName: !Ref ParsedText
-      Events:
-        ParsedTextBucket:
-          Type: S3
-          Properties:
-            Bucket: !Ref ParsedText
-            Events:
-              - s3:ObjectCreated:*
 
   ParserHandlerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -371,7 +396,7 @@ Resources:
         - ResourceName: ScoringHandler
       CodeUri: src/lambda
       Handler: scoring.handler
-      Runtime: python3.11
+      Runtime: python3.13
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
@@ -402,7 +427,7 @@ Resources:
         - ResourceName: EnhancementHandler
       CodeUri: src/lambda
       Handler: enhancement.handler
-      Runtime: python3.11
+      Runtime: python3.13
       MemorySize: 3008
       Timeout: 60 # Increased timeout because AI takes time to think!
       Tracing: Active
@@ -500,7 +525,7 @@ Resources:
       CodeUri: src/lambda
       # FIXED: Typo in handler name
       Handler: download.handler
-      Runtime: python3.11
+      Runtime: python3.13
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
