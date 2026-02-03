@@ -236,7 +236,10 @@ cdk.out/
 *.ai
 *.sketch
 
-
-
 #aws
 */backend/.aws*
+.aws-sam/
+backend/.aws-sam/
+
+# SAM build artifacts
+**/.aws-sam/
