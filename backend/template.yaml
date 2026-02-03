@@ -1,0 +1,565 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  KMR Resume Enhancer - Restored Upload Flow Includes Cognito Auth, API Gateway, Lambda, and S3.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment environment name
+
+Resources:
+  # ============================================================================
+  # 1. Cognito User Pool
+  # ============================================================================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-${Environment}-UserPool
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 7
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailMessage: Your KMR Resume Enhancer verification code is {####}
+        EmailSubject: Verify your email for KMR Resume Enhancer
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      MfaConfiguration: 'OFF'
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: false
+        - Name: name
+          Required: true
+          Mutable: true
+      DeletionProtection: !If
+        - IsProduction
+        - ACTIVE
+        - INACTIVE
+      UserPoolTags:
+        Environment: !Ref Environment
+        Application: KMR-Resume-Enhancer
+    Conditions:
+      IsProduction: !Equals
+        - !Ref Environment
+        - prod
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub ${AWS::StackName}-${Environment}-WebClient
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      ReadAttributes:
+        - email
+        - name
+        - email_verified
+      WriteAttributes:
+        - email
+        - name
+
+  # ============================================================================
+  # 2. API Gateway
+  # ============================================================================
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub
+        - ${ResourceName} From Stack ${AWS::StackName}
+        - ResourceName: Api
+      StageName: Prod
+      # RESTORED: Auth Block
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+            Identity:
+              Header: Authorization
+      DefinitionBody:
+        openapi: '3.0'
+        info: {}
+        paths:
+          /resume/upload:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${uploadHandler.Arn}/invocations
+              responses: {}
+          /resume/enhance:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EnhancementHandler.Arn}/invocations
+              responses: {}
+          /resume/download:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DownloadHandler.Arn}/invocations
+              responses: {}
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+      # RESTORED: Fixed CORS
+      Cors:
+        AllowOrigin: '''http://localhost:3000'''
+        AllowHeaders: '''Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'''
+        MaxAge: 5
+
+  # ============================================================================
+  # 3. Upload Function
+  # ============================================================================
+  uploadHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: uploadHandler
+      CodeUri: src/lambda
+      Handler: upload.handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          # RESTORED: Clean variables
+          UPLOADBUCKET_BUCKET_NAME: !Ref uploadBucket
+      Events:
+        ApiGETresumeupload:
+          Type: Api
+          Properties:
+            Path: /resume/upload
+            Method: GET
+            RestApiId: !Ref Api
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+                - s3:ListBucket
+              Resource:
+                - !Sub arn:${AWS::Partition}:s3:::${uploadBucket}
+                - !Sub arn:${AWS::Partition}:s3:::${uploadBucket}/*
+
+  uploadHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${uploadHandler}
+
+  # ============================================================================
+  # 4. Upload Bucket
+  # ============================================================================
+  uploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-uploadbuc-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: alias/aws/s3
+      PublicAccessBlockConfiguration:
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      # RESTORED: Added S3 CORS
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - PUT
+              - POST
+            AllowedOrigins:
+              - http://localhost:3000
+            MaxAge: 3000
+
+  uploadBucketBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref uploadBucket
+      PolicyDocument:
+        Id: RequireEncryptionInTransit
+        Version: '2012-10-17'
+        Statement:
+          - Principal: '*'
+            Action: '*'
+            Effect: Deny
+            Resource:
+              - !GetAtt uploadBucket.Arn
+              - !Sub ${uploadBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+
+  ExtractionTextDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+  ExtractionHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ExtractionHandler
+      CodeUri: src/lambda
+      Handler: extraction.handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          PARSED_BUCKET_NAME: !Ref ParsedText
+          TABLE_NAME: !Ref ExtractionTextDB
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref uploadBucket
+        - S3CrudPolicy:
+            BucketName: !Ref ParsedText
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ExtractionTextDB
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:DetectDocumentText
+                - textract:AnalyzeDocument
+              Resource: '*'
+      Events:
+        uploadBucket:
+          Type: S3
+          Properties:
+            Bucket: !Ref uploadBucket
+            Events:
+              - s3:ObjectCreated:*
+  ExtractionHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ExtractionHandler}
+
+  # ============================================================================
+  # 5. Parser Lambda
+  # ============================================================================
+  ParserHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ParserHandler
+      CodeUri: src/lambda
+      Handler: parser.handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ExtractionTextDB
+          PARSED_BUCKET_NAME: !Ref ParsedText
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ExtractionTextDB
+        - S3CrudPolicy:
+            BucketName: !Ref ParsedText
+      Events:
+        ParsedTextBucket:
+          Type: S3
+          Properties:
+            Bucket: !Ref ParsedText
+            Events:
+              - s3:ObjectCreated:*
+
+  ParserHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ParserHandler}
+
+  # ============================================================================
+  # 6. Parsed Text Bucket
+  # ============================================================================
+  ParsedText:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-parsedtex-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: alias/aws/s3
+      PublicAccessBlockConfiguration:
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  ParsedTextBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ParsedText
+      PolicyDocument:
+        Id: RequireEncryptionInTransit
+        Version: '2012-10-17'
+        Statement:
+          - Principal: '*'
+            Action: '*'
+            Effect: Deny
+            Resource:
+              - !GetAtt ParsedText.Arn
+              - !Sub ${ParsedText.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+
+  # ============================================================================
+  # 7. Scoring Lambda
+  # ============================================================================
+  ScoringHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: ScoringHandler
+      CodeUri: src/lambda
+      Handler: scoring.handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          PARSED_BUCKET_NAME: !Ref ParsedText
+          TABLE_NAME: !Ref ExtractionTextDB
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref ParsedText
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ExtractionTextDB
+
+  ScoringHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ScoringHandler}
+
+  # ============================================================================
+  # 8. Enhancement Flow
+  # ============================================================================
+  EnhancementHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: EnhancementHandler
+      CodeUri: src/lambda
+      Handler: enhancement.handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 60 # Increased timeout because AI takes time to think!
+      Tracing: Active
+      Environment:
+        Variables:
+          PARSED_BUCKET_NAME: !Ref ParsedText
+          TABLE_NAME: !Ref ExtractionTextDB
+          # ADDED: The AI Model ID
+          BEDROCK_MODEL_ID: anthropic.claude-3-5-sonnet-20240620-v1:0
+          GENERATEDBUCKET_BUCKET_NAME: !Ref GeneratedBucket
+          GENERATEDBUCKET_BUCKET_ARN: !GetAtt GeneratedBucket.Arn
+      Events:
+        ApiPOSTresumeenhance:
+          Type: Api
+          Properties:
+            Path: /resume/enhance
+            Method: POST
+            RestApiId: !Ref Api
+      Policies:
+        # 1. Read/Write to the Parsed Bucket
+        - S3CrudPolicy:
+            BucketName: !Ref ParsedText
+
+        # 2. Write to the Database (This was missing!)
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ExtractionTextDB
+
+        # 3. Talk to Amazon Bedrock (The AI Permission)
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectAcl
+                - s3:GetObjectLegalHold
+                - s3:GetObjectRetention
+                - s3:GetObjectTorrent
+                - s3:GetObjectVersion
+                - s3:GetObjectVersionAcl
+                - s3:GetObjectVersionForReplication
+                - s3:GetObjectVersionTorrent
+                - s3:ListBucket
+                - s3:ListBucketMultipartUploads
+                - s3:ListBucketVersions
+                - s3:ListMultipartUploadParts
+                - s3:AbortMultipartUpload
+                - s3:DeleteObject
+                - s3:DeleteObjectVersion
+                - s3:PutObject
+                - s3:PutObjectLegalHold
+                - s3:PutObjectRetention
+                - s3:RestoreObject
+              Resource:
+                - !Sub arn:${AWS::Partition}:s3:::${GeneratedBucket}
+                - !Sub arn:${AWS::Partition}:s3:::${GeneratedBucket}/*
+  GeneratedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-generated-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: alias/aws/s3
+      PublicAccessBlockConfiguration:
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  GeneratedBucketBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref GeneratedBucket
+      PolicyDocument:
+        Id: RequireEncryptionInTransit
+        Version: '2012-10-17'
+        Statement:
+          - Principal: '*'
+            Action: '*'
+            Effect: Deny
+            Resource:
+              - !GetAtt GeneratedBucket.Arn
+              - !Sub ${GeneratedBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+  DownloadHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: !Sub
+        - Stack ${AWS::StackName} Function ${ResourceName}
+        - ResourceName: DownloadHandler
+      CodeUri: src/lambda
+      # FIXED: Typo in handler name
+      Handler: download.handler
+      Runtime: python3.11
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Environment:
+        Variables:
+          GENERATED_BUCKET_NAME: !Ref GeneratedBucket
+      Events:
+        ApiGETresumedownload:
+          Type: Api
+          Properties:
+            Path: /resume/download
+            Method: GET
+            RestApiId: !Ref Api
+      # ADDED: Permissions to read the file!
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref GeneratedBucket
+
+  DownloadHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${DownloadHandler}
+  # ============================================================================
+  # Meta Data
+  # ============================================================================
+Metadata:
+  AWS::Composer::Groups:
+    Group:
+      Label: 'Upload resume '
+      Members:
+        - uploadHandler
+        - uploadBucket
+        - Api
+    Group2:
+      Label: Extracting Text from pdf
+      Members:
+        - ExtractionTextDB
+        - ExtractionHandler
+    Group3:
+      Label: Parsing Resume Data
+      Members:
+        - ParserHandler
+        - ParsedText
+    Group4:
+      Label: Scoring Resume
+      Members:
+        - ScoringHandler
+    Group5:
+      Label: Tailor Resume
+      Members:
+        - EnhancementHandler
+        - GeneratedBucket
+    Group6:
+      Label: Download Resume
+      Members:
+        - DownloadHandler
+    Group7:
+      Label: Auth
+      Members:
+        - UserPoolClient
+        - UserPool
