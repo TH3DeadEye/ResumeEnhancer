@@ -7,18 +7,19 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 /**
  * FEATURES SECTION COMPONENT
  * 
- * Displays 6 feature cards with scroll-based animations
- * - Each card animates individually as you scroll
- * - Animations reverse when scrolling up
- * - Uses GSAP ScrollTrigger for scroll-linked animations
+ * Enhanced features display with:
+ * - Staggered scroll-triggered animations
+ * - 3D hover tilt and lift effects
+ * - Icon rotation animations
+ * - Parallax scroll effects
+ * - Smooth reversible animations
  */
 
-// Register GSAP plugin for scroll-based animations
+// Register GSAP ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
 // ============================================================
-// FEATURES DATA
-// To add/edit features: modify this array
+// FEATURES DATA - Edit here to add/modify features
 // ============================================================
 const features = [
   {
@@ -26,7 +27,7 @@ const features = [
     title: "AI-Powered Tailoring",
     description:
       "Advanced Amazon Bedrock AI analyzes job descriptions and optimizes your resume with relevant keywords and skills.",
-    color: "from-blue-500 to-cyan-500",  // Gradient colors for icon background
+    color: "from-blue-500 to-cyan-500",
   },
   {
     icon: Zap,
@@ -70,139 +71,166 @@ export function FeaturesSection() {
   // REFS - For GSAP animations
   // ============================================================
   
-  const sectionRef = useRef<HTMLElement>(null);  // Entire section
-  const titleRef = useRef<HTMLDivElement>(null); // Section title
-  const cardsRef = useRef<HTMLDivElement>(null); // Cards container
+  const sectionRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
 
   // ============================================================
   // SCROLL-TRIGGERED ANIMATIONS
   // ============================================================
   
   useEffect(() => {
-    // GSAP context for cleanup
     const ctx = gsap.context(() => {
       
       // ──────────────────────────────────────────────────────────
-      // ANIMATION 1: Section Title
+      // ANIMATION 1: Section Title - Fade and slide from below
       // ──────────────────────────────────────────────────────────
-      /**
-       * Title fades in and slides up as you scroll
-       * 
-       * KEY SCROLLTRIGGER CONCEPTS:
-       * - trigger: Element to watch for scroll position
-       * - start: "top 80%" = when element's top reaches 80% down the viewport
-       * - end: "top 30%" = when element's top reaches 30% down the viewport
-       * - scrub: Animation progress tied to scroll position (smooth follow)
-       * - toggleActions: "play none none reverse" = play on enter, reverse on leave
-       */
       gsap.fromTo(
         titleRef.current,
-        { y: 80, opacity: 0 },  // FROM: 80px below, invisible
+        { y: 80, opacity: 0 },
         {
-          y: 0,                 // TO: original position, visible
+          y: 0,
           opacity: 1,
-          ease: "power2.out",
+          ease: "power3.out",
           scrollTrigger: {
             trigger: titleRef.current,
-            start: "top 80%",   // Start animation when title is 80% down viewport
-            end: "top 30%",     // Finish when title is 30% down viewport
-            scrub: 1,           // Smooth scroll-linked animation (1 second lag)
-            toggleActions: "play none none reverse", // Reverse animation on scroll up
+            start: "top 85%",
+            end: "top 50%",
+            scrub: 1,
+            toggleActions: "play none none reverse",
           },
         }
       );
 
       // ──────────────────────────────────────────────────────────
-      // ANIMATION 2: Feature Cards (Individual animations)
+      // ANIMATION 2: Feature Cards - Enhanced entrance with 3D effect
       // ──────────────────────────────────────────────────────────
-      /**
-       * Each card animates independently as it enters viewport
-       * - Cards slide up, fade in, and scale from 90% to 100%
-       * - Creates a staggered cascading effect
-       */
-      
-      // Convert all elements with "feature-card" class to array
       const cards = gsap.utils.toArray(".feature-card");
       
-      // Loop through each card and create individual animation
       cards.forEach((card: any, index: number) => {
+        // Entrance animation - Faster and more responsive
         gsap.fromTo(
           card,
           {
-            y: 100,        // Start 100px below
-            opacity: 0,    // Start invisible
-            scale: 0.9,    // Start at 90% size
+            y: 80,
+            opacity: 0,
+            scale: 0.9,
           },
           {
-            y: 0,          // End at original position
-            opacity: 1,    // End fully visible
-            scale: 1,      // End at 100% size
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.6,
             ease: "power2.out",
             scrollTrigger: {
-              trigger: card,        // Each card triggers its own animation
-              start: "top 85%",     // Start when card is 85% down viewport
-              end: "top 30%",       // End when card is 30% down viewport
-              scrub: 1.5,           // Slightly slower scroll-link (1.5 second lag)
-              toggleActions: "play none none reverse", // Reverse on scroll up
+              trigger: card,
+              start: "top 85%",
+              toggleActions: "play none none reverse",
             },
           }
         );
+
+        // ──────────────────────────────────────────────────────────
+        // ANIMATION 3: Simple hover interactions - Fast and smooth
+        // ──────────────────────────────────────────────────────────
+        const cardElement = card as HTMLElement;
+        const iconElement = cardElement.querySelector(".feature-icon");
+        
+        // Mouse enter - Quick lift
+        cardElement.addEventListener("mouseenter", () => {
+          gsap.to(card, {
+            y: -8,
+            scale: 1.02,
+            duration: 0.2,
+            ease: "power1.out"
+          });
+          
+          // Simple icon rotation
+          if (iconElement) {
+            gsap.to(iconElement, {
+              rotation: 360,
+              duration: 0.4,
+              ease: "power2.out"
+            });
+          }
+        });
+
+        // Mouse leave - Quick return
+        cardElement.addEventListener("mouseleave", () => {
+          gsap.to(card, {
+            y: 0,
+            scale: 1,
+            duration: 0.2,
+            ease: "power1.out"
+          });
+        });
       });
+
     }, sectionRef);
 
-    // Cleanup: Remove all ScrollTriggers when component unmounts
+    // Cleanup ScrollTriggers on unmount
     return () => ctx.revert();
-  }, []); // Run once on mount
+  }, []);
 
   // ============================================================
   // RENDER
   // ============================================================
   
   return (
-    <section id="features" ref={sectionRef} className="py-24 bg-white dark:bg-gray-900">
+    <section id="features" ref={sectionRef} className="py-24" style={{ backgroundColor: "var(--bg)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ============================================================ */}
         {/* SECTION TITLE - Animated on scroll */}
         {/* ============================================================ */}
         <div ref={titleRef} className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: "var(--text)" }}>
             Powerful Features for Job Seekers
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl max-w-3xl mx-auto" style={{ color: "var(--text-muted)" }}>
             Everything you need to create perfect, tailored resumes that get noticed by recruiters
             and pass ATS filters.
           </p>
         </div>
 
         {/* ============================================================ */}
-        {/* FEATURE CARDS GRID - Each card has "feature-card" class */}
+        {/* FEATURE CARDS GRID - Staggered animations with hover effects */}
         {/* ============================================================ */}
         <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => {
-            const Icon = feature.icon; // Get icon component from feature data
+            const Icon = feature.icon;
             
             return (
               <Card
                 key={index}
-                // IMPORTANT: "feature-card" class is used by GSAP to target this element
-                className="feature-card border-none shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900"
+                className="feature-card border-none shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                style={{ 
+                  transformStyle: "preserve-3d",
+                  background: "linear-gradient(to bottom right, var(--bg-light), var(--bg))"
+                }}
               >
                 <CardContent className="p-8">
-                  {/* Icon with gradient background */}
+                  {/* Icon with gradient background and rotation animation */}
                   <div
-                    className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg`}
+                    className="feature-icon w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
+                    style={{
+                      background: index % 3 === 0 
+                        ? "var(--primary)" 
+                        : index % 3 === 1 
+                        ? "var(--secondary)" 
+                        : "var(--success)"
+                    }}
                   >
-                    <Icon className="h-8 w-8 text-white" />
+                    <Icon className="h-8 w-8" style={{ color: "var(--bg-light)" }} />
                   </div>
                   
                   {/* Feature title */}
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">
+                  <h3 className="text-2xl font-bold mb-3" style={{ color: "var(--text)" }}>
                     {feature.title}
                   </h3>
                   
                   {/* Feature description */}
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <p className="leading-relaxed" style={{ color: "var(--text-muted)" }}>
                     {feature.description}
                   </p>
                 </CardContent>

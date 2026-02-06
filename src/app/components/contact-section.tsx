@@ -10,11 +10,12 @@ import { toast } from "sonner";
 /**
  * CONTACT SECTION COMPONENT
  * 
- * Contact form with:
- * - Name, email, and message fields
- * - Scroll-triggered fade-in animation
- * - Form validation and toast notifications
- * - Contact information display
+ * Enhanced contact form featuring:
+ * - Input field focus animations with glow effects
+ * - Staggered form field entrance
+ * - Button pulse and hover animations
+ * - Contact card animations
+ * - Form validation with smooth feedback
  */
 
 // Register GSAP ScrollTrigger
@@ -26,7 +27,9 @@ export function ContactSection() {
   // ============================================================
   
   const sectionRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const contactInfoRef = useRef<HTMLDivElement>(null);
   
   // Form data state
   const [formData, setFormData] = useState({
@@ -36,32 +39,167 @@ export function ContactSection() {
   });
 
   // ============================================================
-  // SCROLL ANIMATION
+  // SCROLL & ENTRANCE ANIMATIONS
   // ============================================================
   
   useEffect(() => {
     const ctx = gsap.context(() => {
-      /**
-       * ANIMATION: Form fades in and slides up when scrolling to this section
-       * 
-       * NOTE: This animation does NOT use "scrub"
-       * - It triggers once when section enters viewport
-       * - Does not reverse on scroll up (one-time entrance animation)
-       */
+      
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 1: Title fade and slide
+      // ──────────────────────────────────────────────────────────
       gsap.fromTo(
-        formRef.current,
-        { y: 60, opacity: 0 },  // FROM: 60px below, invisible
+        titleRef.current,
+        { y: 60, opacity: 0 },
         {
-          y: 0,                 // TO: original position, visible
+          y: 0,
           opacity: 1,
-          duration: 1,          // Takes 1 second (not tied to scroll)
+          duration: 1,
+          ease: "power3.out",
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: "top 70%",   // Trigger when section is 70% down viewport
-            // NO "scrub" - fires once instead of following scroll
+            start: "top 75%",
           },
         }
       );
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 2: Contact info cards with stagger
+      // ──────────────────────────────────────────────────────────
+      const contactCards = contactInfoRef.current?.querySelectorAll(".contact-info-card");
+      if (contactCards) {
+        gsap.fromTo(
+          Array.from(contactCards),
+          { x: -60, opacity: 0, scale: 0.9 },
+          {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "back.out(1.5)",
+            scrollTrigger: {
+              trigger: contactInfoRef.current,
+              start: "top 80%",
+            },
+          }
+        );
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 3: Form fields with stagger from right
+      // ──────────────────────────────────────────────────────────
+      const formFields = formRef.current?.querySelectorAll(".form-field");
+      if (formFields) {
+        gsap.fromTo(
+          Array.from(formFields),
+          { x: 60, opacity: 0, rotateY: -10 },
+          {
+            x: 0,
+            opacity: 1,
+            rotateY: 0,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: formRef.current,
+              start: "top 80%",
+            },
+          }
+        );
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 4: Submit button with bounce
+      // ──────────────────────────────────────────────────────────
+      const submitButton = formRef.current?.querySelector(".submit-button");
+      if (submitButton) {
+        gsap.fromTo(
+          submitButton,
+          { y: 30, opacity: 0, scale: 0.8 },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.8,
+            ease: "elastic.out(1, 0.5)",
+            scrollTrigger: {
+              trigger: submitButton,
+              start: "top 90%",
+            },
+          }
+        );
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 5: Input focus animations
+      // ──────────────────────────────────────────────────────────
+      const inputs = formRef.current?.querySelectorAll("input, textarea");
+      inputs?.forEach((input) => {
+        // Focus - Glow and scale
+        input.addEventListener("focus", () => {
+          gsap.to(input, {
+            scale: 1.02,
+            boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        });
+
+        // Blur - Return to normal
+        input.addEventListener("blur", () => {
+          gsap.to(input, {
+            scale: 1,
+            boxShadow: "none",
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        });
+      });
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 6: Hover effects for contact cards
+      // ──────────────────────────────────────────────────────────
+      contactCards?.forEach((card) => {
+        const icon = card.querySelector(".contact-icon");
+        
+        card.addEventListener("mouseenter", () => {
+          gsap.to(card, {
+            y: -5,
+            scale: 1.03,
+            duration: 0.3,
+            ease: "power2.out"
+          });
+          
+          if (icon) {
+            gsap.to(icon, {
+              rotation: 360,
+              scale: 1.1,
+              duration: 0.5,
+              ease: "back.out(2)"
+            });
+          }
+        });
+
+        card.addEventListener("mouseleave", () => {
+          gsap.to(card, {
+            y: 0,
+            scale: 1,
+            duration: 0.3,
+            ease: "power2.out"
+          });
+          
+          if (icon) {
+            gsap.to(icon, {
+              rotation: 0,
+              scale: 1,
+              duration: 0.3,
+              ease: "power2.out"
+            });
+          }
+        });
+      });
+
     }, sectionRef);
 
     return () => ctx.revert();
@@ -72,34 +210,47 @@ export function ContactSection() {
   // ============================================================
   
   /**
-   * Handles form submission
-   * - Prevents default form behavior
-   * - Shows success toast notification
-   * - Resets form fields
-   * 
-   * TO INTEGRATE WITH BACKEND:
-   * - Add API call here (e.g., fetch, axios)
-   * - Handle loading state
-   * - Handle error cases
+   * Handles form submission with animation feedback
    */
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent page reload
+    e.preventDefault();
     
-    // Show success message (uses Sonner toast library)
+    // Animate submit button on click
+    const submitButton = formRef.current?.querySelector(".submit-button");
+    if (submitButton) {
+      gsap.to(submitButton, {
+        scale: 0.95,
+        duration: 0.1,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.inOut"
+      });
+    }
+    
+    // Show success toast
     toast.success("Message sent successfully! We'll get back to you soon.");
     
-    // Reset form to empty state
-    setFormData({ name: "", email: "", message: "" });
+    // Reset form with animation
+    gsap.to(formRef.current, {
+      opacity: 0.5,
+      duration: 0.2,
+      onComplete: () => {
+        setFormData({ name: "", email: "", message: "" });
+        gsap.to(formRef.current, {
+          opacity: 1,
+          duration: 0.3
+        });
+      }
+    });
   };
 
   /**
-   * Updates form state when user types
-   * Handles both Input and Textarea elements
+   * Updates form state on input change
    */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ 
-      ...formData,                    // Keep existing values
-      [e.target.name]: e.target.value // Update only the changed field
+      ...formData,
+      [e.target.name]: e.target.value
     });
   };
 
@@ -108,13 +259,13 @@ export function ContactSection() {
   // ============================================================
   
   return (
-    <section id="contact" ref={sectionRef} className="py-24 bg-white dark:bg-gray-900">
+    <section id="contact" ref={sectionRef} className="py-24" style={{ backgroundColor: "var(--bg)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ============================================================ */}
-        {/* SECTION HEADER */}
+        {/* SECTION HEADER - Animated entrance */}
         {/* ============================================================ */}
-        <div className="text-center mb-16">
+        <div ref={titleRef} className="text-center mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
             Get In Touch
           </h2>
@@ -126,21 +277,20 @@ export function ContactSection() {
 
         {/* ============================================================ */}
         {/* TWO COLUMN LAYOUT */}
-        {/* Left: Contact info | Right: Contact form */}
         {/* ============================================================ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           
-          {/* LEFT COLUMN: Contact Information */}
-          <div className="space-y-8">
+          {/* LEFT COLUMN: Contact Information with animated cards */}
+          <div ref={contactInfoRef} className="space-y-8">
             <div>
               <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
                 Contact Information
               </h3>
               
               <div className="space-y-4">
-                {/* Email Contact */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+                {/* Email Contact Card */}
+                <div className="contact-info-card flex items-start gap-4 p-4 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer">
+                  <div className="contact-icon w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
                     <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
@@ -149,9 +299,9 @@ export function ContactSection() {
                   </div>
                 </div>
 
-                {/* Live Chat Info */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+                {/* Live Chat Info Card */}
+                <div className="contact-info-card flex items-start gap-4 p-4 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer">
+                  <div className="contact-icon w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
                     <MessageSquare className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
@@ -165,7 +315,7 @@ export function ContactSection() {
             </div>
 
             {/* Project Details Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8">
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8 hover:shadow-lg transition-shadow">
               <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
                 Project Details
               </h3>
@@ -184,12 +334,12 @@ export function ContactSection() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Contact Form (Animated) */}
+          {/* RIGHT COLUMN: Contact Form with animated fields */}
           <div ref={formRef}>
             <form onSubmit={handleSubmit} className="space-y-6">
               
               {/* Name Field */}
-              <div>
+              <div className="form-field">
                 <label 
                   htmlFor="name" 
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -202,14 +352,14 @@ export function ContactSection() {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  required  // HTML5 validation
+                  required
                   placeholder="John Doe"
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white transition-all"
                 />
               </div>
 
               {/* Email Field */}
-              <div>
+              <div className="form-field">
                 <label 
                   htmlFor="email" 
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -219,17 +369,17 @@ export function ContactSection() {
                 <Input
                   id="email"
                   name="email"
-                  type="email"  // HTML5 email validation
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
                   placeholder="you@example.com"
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white transition-all"
                 />
               </div>
 
               {/* Message Field */}
-              <div>
+              <div className="form-field">
                 <label 
                   htmlFor="message" 
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
@@ -242,17 +392,17 @@ export function ContactSection() {
                   value={formData.message}
                   onChange={handleChange}
                   required
-                  rows={6}  // Height of textarea (6 lines)
+                  rows={6}
                   placeholder="Tell us more about your inquiry..."
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white"
+                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white transition-all"
                 />
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button with animated feedback */}
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                className="submit-button w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 Send Message <Send className="ml-2 h-5 w-5" />
               </Button>

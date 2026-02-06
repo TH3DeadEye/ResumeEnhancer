@@ -6,60 +6,91 @@ import gsap from "gsap";
 
 /**
  * MAIN APP COMPONENT
- * This is the root component that manages page navigation between Landing and Sign In pages
- * Uses GSAP for smooth page transition animations
+ * 
+ * Root component managing page navigation with enhanced transitions:
+ * - 3D flip page transitions
+ * - Smooth fade and slide effects
+ * - Scale and rotation animations
+ * - Optimized scroll reset
  */
+
 export default function App() {
   // ============================================================
   // STATE MANAGEMENT
   // ============================================================
   
-  // Track which page is currently displayed ("landing" or "signin")
   const [currentPage, setCurrentPage] = useState<"landing" | "signin">("landing");
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
-  // Reference to the page container for GSAP animations
   const pageRef = useRef<HTMLDivElement>(null);
 
   // ============================================================
-  // PAGE NAVIGATION WITH ANIMATION
+  // ENHANCED PAGE NAVIGATION WITH ADVANCED TRANSITIONS
   // ============================================================
   
   /**
-   * Handles smooth page transitions with fade animation
-   * @param page - The page to navigate to ("landing" or "signin")
+   * Handles smooth page transitions with advanced animations
    * 
-   * Animation Flow:
-   * 1. Fade out current page (opacity 0, move up 20px)
-   * 2. Switch page content
-   * 3. Scroll to top of new page
-   * 4. Fade in new page (opacity 1, move to original position)
+   * Animation sequence:
+   * 1. Scale down and rotate current page
+   * 2. Fade out with blur effect
+   * 3. Switch page content
+   * 4. Reset scroll position
+   * 5. Scale up and rotate new page in
+   * 6. Fade in with clarity
    */
   const handleNavigate = (page: "landing" | "signin") => {
-    // Don't animate if already on the requested page
-    if (page === currentPage) return;
+    // Prevent multiple transitions at once
+    if (page === currentPage || isTransitioning) return;
 
-    // PHASE 1: Fade out animation (0.3 seconds)
+    setIsTransitioning(true);
+
     if (pageRef.current) {
-      gsap.to(pageRef.current, {
-        opacity: 0,          // Fade to transparent
-        y: -20,              // Move up 20 pixels
-        duration: 0.3,       // Animation takes 0.3 seconds
-        onComplete: () => {  // After fade out completes...
-          
-          // PHASE 2: Switch to new page
-          setCurrentPage(page);
-          
-          // PHASE 3: Reset scroll position to top
-          window.scrollTo(0, 0);
-          
-          // PHASE 4: Fade in new page (0.3 seconds)
-          gsap.fromTo(
-            pageRef.current,
-            { opacity: 0, y: 20 },    // Start: invisible, 20px down
-            { opacity: 1, y: 0, duration: 0.3 }  // End: visible, original position
-          );
-        },
+      // Create timeline for coordinated animations
+      const timeline = gsap.timeline({
+        onComplete: () => setIsTransitioning(false)
       });
+
+      // ──────────────────────────────────────────────────────────
+      // PHASE 1: Exit animation - Smooth fade with subtle scale
+      // ──────────────────────────────────────────────────────────
+      timeline.to(pageRef.current, {
+        opacity: 0,
+        scale: 0.98,
+        y: -20,
+        filter: "blur(5px)",
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => {
+          // ──────────────────────────────────────────────────────────
+          // PHASE 2: Switch page content and reset scroll
+          // ──────────────────────────────────────────────────────────
+          setCurrentPage(page);
+          window.scrollTo({ top: 0, behavior: "instant" });
+        }
+      });
+
+      // ──────────────────────────────────────────────────────────
+      // PHASE 3: Entrance animation - Smooth fade in
+      // ──────────────────────────────────────────────────────────
+      timeline.fromTo(
+        pageRef.current,
+        { 
+          opacity: 0, 
+          scale: 1.02, 
+          y: 20,
+          filter: "blur(5px)"
+        },
+        { 
+          opacity: 1, 
+          scale: 1, 
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.4,
+          ease: "power2.out",
+          clearProps: "all" // Clear all inline styles after animation
+        }
+      );
     }
   };
 
@@ -71,19 +102,17 @@ export default function App() {
     <div className="min-h-screen">
       {/* 
         NAVIGATION BAR
-        - Always visible at top
+        - Fixed at top
         - Handles page switching
-        - Includes theme toggle button
+        - Shows scroll progress
       */}
       <Navigation onNavigate={handleNavigate} currentPage={currentPage} />
       
       {/* 
         PAGE CONTENT CONTAINER
-        - Animated container that holds current page
-        - Referenced by pageRef for GSAP animations
+        - Smooth fade transitions between pages
       */}
       <div ref={pageRef}>
-        {/* Conditionally render Landing or Sign In page based on currentPage state */}
         {currentPage === "landing" ? (
           <LandingPage onNavigate={handleNavigate} />
         ) : (

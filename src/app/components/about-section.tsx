@@ -6,11 +6,12 @@ import { Target, Users, Rocket } from "lucide-react";
 /**
  * ABOUT SECTION COMPONENT
  * 
- * Displays information about the project with:
- * - Split layout (image left, content right)
- * - Scroll-based animations that reverse on scroll up
- * - Individual animations for value cards
- * - Team and mission information
+ * Enhanced about section featuring:
+ * - Parallax split-screen reveal (image left, content right)
+ * - 3D rotation effects on scroll
+ * - Staggered value cards with hover animations
+ * - Badge pulse effect
+ * - Smooth reversible scroll animations
  */
 
 // Register GSAP ScrollTrigger plugin
@@ -21,9 +22,10 @@ export function AboutSection() {
   // REFS - For GSAP scroll animations
   // ============================================================
   
-  const sectionRef = useRef<HTMLElement>(null);   // Entire section (trigger point)
-  const imageRef = useRef<HTMLDivElement>(null);  // Left side image
-  const contentRef = useRef<HTMLDivElement>(null); // Right side text content
+  const sectionRef = useRef<HTMLElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
 
   // ============================================================
   // SCROLL-TRIGGERED ANIMATIONS
@@ -33,98 +35,203 @@ export function AboutSection() {
     const ctx = gsap.context(() => {
       
       // ──────────────────────────────────────────────────────────
-      // ANIMATION 1: Image (Left Side)
+      // ANIMATION 1: Image with parallax and 3D rotation
       // ──────────────────────────────────────────────────────────
-      /**
-       * Image slides in from the left while fading in and scaling up
-       * 
-       * ScrollTrigger settings:
-       * - Triggers when section enters viewport at 75%
-       * - Animation completes when section is at 25% of viewport
-       * - scrub: 1.2 = smooth scroll-linked animation with 1.2s lag
-       * - toggleActions: Reverses animation when scrolling up
-       */
       gsap.fromTo(
         imageRef.current,
         {
-          x: -150,      // Start 150px to the left
-          opacity: 0,   // Start invisible
-          scale: 0.9,   // Start at 90% size
-        },
-        {
-          x: 0,         // End at original position
-          opacity: 1,   // End fully visible
-          scale: 1,     // End at 100% size
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: sectionRef.current,  // Watch the section element
-            start: "top 75%",   // When section top hits 75% of viewport
-            end: "top 25%",     // Complete when section top hits 25%
-            scrub: 1.2,         // Smooth scroll-linked (1.2 second lag for smoothness)
-            toggleActions: "play none none reverse", // Reverse on scroll up
-          },
-        }
-      );
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 2: Content (Right Side)
-      // ──────────────────────────────────────────────────────────
-      /**
-       * Content slides in from the right (opposite of image)
-       * Creates a "split reveal" effect
-       */
-      gsap.fromTo(
-        contentRef.current,
-        {
-          x: 150,       // Start 150px to the right
+          x: -180,
           opacity: 0,
-          scale: 0.9,
+          scale: 0.85,
+          rotateY: -20,
         },
         {
           x: 0,
           opacity: 1,
           scale: 1,
-          ease: "power2.out",
+          rotateY: 0,
+          ease: "power3.out",
           scrollTrigger: {
             trigger: sectionRef.current,
+            start: "top 80%",
+            end: "top 30%",
+            scrub: 1.5,
+            toggleActions: "play none none reverse",
+          },
+        }
+      );
+
+      // Add subtle parallax movement to image on scroll
+      gsap.to(imageRef.current, {
+        y: -40,
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 2,
+        }
+      });
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 2: Content with parallax and 3D rotation
+      // ──────────────────────────────────────────────────────────
+      gsap.fromTo(
+        contentRef.current,
+        {
+          x: 180,
+          opacity: 0,
+          scale: 0.85,
+          rotateY: 20,
+        },
+        {
+          x: 0,
+          opacity: 1,
+          scale: 1,
+          rotateY: 0,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 80%",
+            end: "top 30%",
+            scrub: 1.5,
+            toggleActions: "play none none reverse",
+          },
+        }
+      );
+
+      // Add subtle parallax movement to content on scroll
+      gsap.to(contentRef.current, {
+        y: -50,
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 2,
+        }
+      });
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 3: Simple badge fade in (removed complex animations)
+      // ──────────────────────────────────────────────────────────
+      gsap.fromTo(
+        badgeRef.current,
+        {
+          scale: 0.8,
+          opacity: 0,
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          duration: 0.6,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: imageRef.current,
             start: "top 75%",
-            end: "top 25%",
-            scrub: 1.2,
             toggleActions: "play none none reverse",
           },
         }
       );
 
       // ──────────────────────────────────────────────────────────
-      // ANIMATION 3: Value Cards (Individual animations)
+      // ANIMATION 4: Value Cards with stagger and 3D effects
       // ──────────────────────────────────────────────────────────
-      /**
-       * Each value card (Mission, Team, Vision) animates individually
-       * Creates a cascading effect as they enter viewport
-       */
       const valueCards = gsap.utils.toArray(".about-value-card");
       
       valueCards.forEach((card: any, index: number) => {
+        // Entrance animation - Faster and simpler
         gsap.fromTo(
           card,
           {
-            x: 50,        // Start 50px to the right
-            opacity: 0,   // Start invisible
+            x: 60,
+            opacity: 0,
           },
           {
-            x: 0,         // End at original position
-            opacity: 1,   // End fully visible
+            x: 0,
+            opacity: 1,
+            duration: 0.6,
             ease: "power2.out",
             scrollTrigger: {
-              trigger: card,      // Each card triggers independently
-              start: "top 90%",   // Start when card is 90% down viewport
-              end: "top 40%",     // Complete when card is 40% down
-              scrub: 1,           // Quick scroll-link (1 second lag)
+              trigger: card,
+              start: "top 85%",
               toggleActions: "play none none reverse",
             },
           }
         );
+
+        // ──────────────────────────────────────────────────────────
+        // ANIMATION 5: Simple hover effects - Respond to entire card area
+        // ──────────────────────────────────────────────────────────
+        const cardElement = card as HTMLElement;
+        const iconContainer = cardElement.querySelector(".about-value-icon");
+        
+        // Mouse enter - Quick lift with background
+        cardElement.addEventListener("mouseenter", () => {
+          gsap.to(card, {
+            x: 8,
+            scale: 1.02,
+            backgroundColor: "rgba(59, 130, 246, 0.05)",
+            duration: 0.2,
+            ease: "power1.out"
+          });
+          
+          // Quick icon scale
+          if (iconContainer) {
+            gsap.to(iconContainer, {
+              scale: 1.1,
+              duration: 0.2,
+              ease: "back.out(2)"
+            });
+          }
+        });
+
+        // Mouse leave - Quick return
+        cardElement.addEventListener("mouseleave", () => {
+          gsap.to(card, {
+            x: 0,
+            scale: 1,
+            backgroundColor: "transparent",
+            duration: 0.2,
+            ease: "power1.out"
+          });
+          
+          if (iconContainer) {
+            gsap.to(iconContainer, {
+              scale: 1,
+              duration: 0.2,
+              ease: "power1.out"
+            });
+          }
+        });
       });
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 6: Heading text reveal with split
+      // ──────────────────────────────────────────────────────────
+      const heading = contentRef.current?.querySelector("h2");
+      if (heading) {
+        gsap.fromTo(
+          heading,
+          { 
+            opacity: 0, 
+            y: 30,
+            filter: "blur(5px)"
+          },
+          {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: heading,
+              start: "top 85%",
+              end: "top 60%",
+              scrub: 1,
+            }
+          }
+        );
+      }
+
     }, sectionRef);
 
     // Cleanup ScrollTriggers on unmount
@@ -139,49 +246,56 @@ export function AboutSection() {
     <section 
       id="about" 
       ref={sectionRef} 
-      className="py-24 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800"
+      className="py-24"
+      style={{ 
+        perspective: "1000px",
+        background: "linear-gradient(to bottom right, var(--bg-dark), var(--bg))"
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* ============================================================ */}
-          {/* LEFT SIDE: Team Image with Badge */}
+          {/* LEFT SIDE: Team Image with animated badge */}
           {/* ============================================================ */}
-          <div ref={imageRef} className="relative">
+          <div ref={imageRef} className="relative" style={{ transformStyle: "preserve-3d" }}>
             <div className="relative rounded-3xl overflow-hidden shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1739298061740-5ed03045b280?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWFtJTIwY29sbGFib3JhdGlvbiUyMG9mZmljZXxlbnwxfHx8fDE3NzAxNTUwNTB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                 alt="Team collaboration"
                 className="w-full h-full object-cover"
               />
-              {/* Gradient overlay for better text contrast */}
+              {/* Gradient overlay for visual depth */}
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-purple-600/20"></div>
             </div>
             
-            {/* Team Badge - Positioned bottom-right */}
-            <div className="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+            {/* Team Badge - Animated with pulse and bounce */}
+            <div 
+              ref={badgeRef}
+              className="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6"
+            >
               <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">KMR</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Team</div>
             </div>
           </div>
 
           {/* ============================================================ */}
-          {/* RIGHT SIDE: Content */}
+          {/* RIGHT SIDE: Content with animated elements */}
           {/* ============================================================ */}
-          <div ref={contentRef}>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
+          <div ref={contentRef} style={{ transformStyle: "preserve-3d" }}>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-6" style={{ color: "var(--text)" }}>
               About Our Project
             </h2>
             
             {/* Introduction paragraphs */}
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-              The <span className="font-semibold text-blue-600 dark:text-blue-400">AI Resume Enhancer</span> is a
+            <p className="text-lg mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              The <span className="font-semibold" style={{ color: "var(--primary)" }}>AI Resume Enhancer</span> is a
               cutting-edge, cloud-native web application developed as part of the{" "}
               <span className="font-semibold">COMP 2154 System Development Project</span>. Our
               mission is to revolutionize the job application process for students and
               professionals.
             </p>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+            <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--text-muted)" }}>
               Built on a serverless AWS architecture using Lambda, S3, DynamoDB, and Amazon
               Bedrock, our platform leverages Generative AI to automatically tailor resumes to
               specific job descriptions, helping candidates bypass ATS filters and increase their
@@ -189,14 +303,13 @@ export function AboutSection() {
             </p>
 
             {/* ============================================================ */}
-            {/* VALUE CARDS - Mission, Team, Vision */}
-            {/* Each has "about-value-card" class for GSAP targeting */}
+            {/* VALUE CARDS - Mission, Team, Vision with hover effects */}
             {/* ============================================================ */}
             <div className="space-y-4">
               
               {/* Mission Card */}
-              <div className="about-value-card flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="about-value-card flex items-start gap-4 p-4 rounded-xl transition-all cursor-pointer">
+                <div className="about-value-icon w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -211,8 +324,8 @@ export function AboutSection() {
               </div>
 
               {/* Team Card */}
-              <div className="about-value-card flex items-start gap-4">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="about-value-card flex items-start gap-4 p-4 rounded-xl transition-all cursor-pointer">
+                <div className="about-value-icon w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
@@ -227,8 +340,8 @@ export function AboutSection() {
               </div>
 
               {/* Vision Card */}
-              <div className="about-value-card flex items-start gap-4">
-                <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="about-value-card flex items-start gap-4 p-4 rounded-xl transition-all cursor-pointer">
+                <div className="about-value-icon w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Rocket className="h-6 w-6 text-pink-600 dark:text-pink-400" />
                 </div>
                 <div>

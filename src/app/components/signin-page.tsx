@@ -11,13 +11,13 @@ import { Toaster } from "./ui/sonner";
 /**
  * SIGN IN / SIGN UP PAGE COMPONENT
  * 
- * Features:
- * - Toggle between Sign In and Sign Up modes
- * - Smooth entrance animations using GSAP
- * - Password visibility toggle
- * - "Remember Me" checkbox (Sign In only)
- * - Form validation with toast notifications
- * - Responsive two-column layout
+ * Enhanced authentication page featuring:
+ * - Smooth two-panel entrance animations
+ * - Form toggle animations with morphing effect
+ * - Input focus micro-interactions
+ * - Password visibility toggle with animation
+ * - Floating feature list items
+ * - Button hover and click feedback
  */
 
 export function SignInPage() {
@@ -25,121 +25,194 @@ export function SignInPage() {
   // REFS - For GSAP animations
   // ============================================================
   
-  const containerRef = useRef<HTMLDivElement>(null);  // Entire page container
-  const formRef = useRef<HTMLDivElement>(null);       // Right side (form)
-  const imageRef = useRef<HTMLDivElement>(null);      // Left side (branding)
+  const containerRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
   
   // ============================================================
   // STATE MANAGEMENT
   // ============================================================
   
-  const [showPassword, setShowPassword] = useState(false);  // Toggle password visibility
-  const [isSignUp, setIsSignUp] = useState(false);          // Toggle between Sign In / Sign Up
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   
-  // Form data state
   const [formData, setFormData] = useState({
-    name: "",              // Only used in Sign Up mode
+    name: "",
     email: "",
     password: "",
-    rememberMe: false,     // Only used in Sign In mode
+    rememberMe: false,
   });
 
   // ============================================================
-  // ENTRANCE ANIMATIONS (Runs once on page load)
+  // ENTRANCE ANIMATIONS - Initial page load
   // ============================================================
   
   useEffect(() => {
     const ctx = gsap.context(() => {
-      /**
-       * TIMELINE: Two-panel reveal animation
-       * Left panel (image) and right panel (form) slide in from opposite sides
-       */
-      const tl = gsap.timeline();
+      const mainTimeline = gsap.timeline();
 
-      // ANIMATION 1: Left panel slides in from left
-      tl.fromTo(
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 1: Left panel slides in with 3D effect
+      // ──────────────────────────────────────────────────────────
+      mainTimeline.fromTo(
         imageRef.current,
-        { x: -100, opacity: 0 },  // FROM: 100px to the left, invisible
-        { 
-          x: 0,                   // TO: original position
-          opacity: 1,             // fully visible
-          duration: 1,            // takes 1 second
-          ease: "power3.out"      // smooth deceleration
-        },
-      )
-      // ANIMATION 2: Right panel slides in from right
-      .fromTo(
-        formRef.current,
-        { x: 100, opacity: 0 },   // FROM: 100px to the right, invisible
+        { x: -120, opacity: 0, rotateY: -15 },
         { 
           x: 0, 
           opacity: 1, 
-          duration: 1, 
+          rotateY: 0,
+          duration: 1.2, 
+          ease: "power3.out"
+        },
+      );
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 2: Logo bounce in
+      // ──────────────────────────────────────────────────────────
+      mainTimeline.fromTo(
+        logoRef.current,
+        { scale: 0, rotation: -180 },
+        {
+          scale: 1,
+          rotation: 0,
+          duration: 0.8,
+          ease: "elastic.out(1, 0.6)"
+        },
+        "-=0.8"
+      );
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 3: Feature list items float in with stagger
+      // ──────────────────────────────────────────────────────────
+      const featureItems = imageRef.current?.querySelectorAll(".feature-item");
+      if (featureItems) {
+        mainTimeline.fromTo(
+          Array.from(featureItems),
+          { x: -30, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.6,
+            stagger: 0.15,
+            ease: "power2.out"
+          },
+          "-=0.6"
+        );
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 4: Right panel (form) slides in
+      // ──────────────────────────────────────────────────────────
+      mainTimeline.fromTo(
+        formRef.current,
+        { x: 120, opacity: 0, rotateY: 15 },
+        { 
+          x: 0, 
+          opacity: 1, 
+          rotateY: 0,
+          duration: 1.2, 
           ease: "power3.out" 
         },
-        "-=0.7",  // OVERLAP: Start 0.7 seconds before left panel finishes
-                  // Creates simultaneous sliding effect
+        "-=1.0"
       );
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 5: Input focus animations
+      // ──────────────────────────────────────────────────────────
+      const inputs = formRef.current?.querySelectorAll("input");
+      inputs?.forEach((input) => {
+        input.addEventListener("focus", () => {
+          gsap.to(input, {
+            scale: 1.02,
+            borderColor: "rgb(59, 130, 246)",
+            boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        });
+
+        input.addEventListener("blur", () => {
+          gsap.to(input, {
+            scale: 1,
+            boxShadow: "none",
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        });
+      });
+
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 6: Continuous floating animation for features
+      // ──────────────────────────────────────────────────────────
+      if (featureItems) {
+        featureItems.forEach((item, index) => {
+          gsap.to(item, {
+            y: -5,
+            duration: 2 + (index * 0.3),
+            ease: "sine.inOut",
+            repeat: -1,
+            yoyo: true
+          });
+        });
+      }
+
     }, containerRef);
 
-    // Cleanup on unmount
     return () => ctx.revert();
-  }, []); // Run once on mount
+  }, []);
 
   // ============================================================
-  // TOGGLE ANIMATION (Runs when switching Sign In ↔ Sign Up)
+  // TOGGLE ANIMATION - Smooth transition without size jump
   // ============================================================
   
   useEffect(() => {
     if (formRef.current) {
-      /**
-       * ANIMATION: Quick scale/fade effect when switching modes
-       * - Prevents jarring instant change when "Full Name" field appears/disappears
-       * - Creates smooth transition between Sign In and Sign Up forms
-       */
+      // Simple fade animation to prevent jumping
       gsap.fromTo(
         formRef.current,
-        { scale: 0.95, opacity: 0 },  // FROM: Slightly smaller, invisible
+        { 
+          opacity: 0,
+        },
         {
-          scale: 1,                   // TO: Normal size
-          opacity: 1,                 // fully visible
-          duration: 0.3,              // Quick transition (0.3 seconds)
+          opacity: 1,
+          duration: 0.3,
           ease: "power2.out",
         },
       );
     }
-  }, [isSignUp]); // Trigger whenever isSignUp changes
+  }, [isSignUp]);
 
   // ============================================================
   // FORM HANDLERS
   // ============================================================
   
   /**
-   * Handles form submission
-   * - Shows appropriate success message based on mode
-   * - Resets form fields
-   * 
-   * TO INTEGRATE WITH AWS COGNITO:
-   * - Add AWS Cognito SDK calls here
-   * - Handle authentication tokens
-   * - Redirect to dashboard on success
-   * - Handle error cases (invalid credentials, etc.)
+   * Handles form submission with animation feedback
    */
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent page reload
+    e.preventDefault();
 
-    // Show different messages for Sign Up vs Sign In
-    if (isSignUp) {
-      toast.success(
-        "Account created successfully! Welcome to AI Resume Enhancer.",
-      );
-    } else {
-      toast.success(
-        "Signed in successfully! Redirecting to dashboard...",
-      );
+    // Button click feedback animation
+    const submitButton = formRef.current?.querySelector("button[type='submit']");
+    if (submitButton) {
+      gsap.to(submitButton, {
+        scale: 0.95,
+        duration: 0.1,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.inOut"
+      });
     }
 
-    // Reset form to empty state
+    // Show success message
+    if (isSignUp) {
+      toast.success("Account created successfully! Welcome to AI Resume Enhancer.");
+    } else {
+      toast.success("Signed in successfully! Redirecting to dashboard...");
+    }
+
+    // Reset form
     setFormData({
       name: "",
       email: "",
@@ -149,19 +222,29 @@ export function SignInPage() {
   };
 
   /**
-   * Updates form state when user types
-   * - Handles both text inputs and checkboxes
-   * - Uses input name attribute to update correct field
+   * Updates form state on input change
    */
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      // For checkboxes, use 'checked' value; for text inputs, use 'value'
       [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  /**
+   * Toggles password visibility with animation
+   */
+  const togglePasswordVisibility = () => {
+    const eyeIcon = formRef.current?.querySelector(".password-toggle-icon");
+    if (eyeIcon) {
+      gsap.to(eyeIcon, {
+        rotation: 180,
+        duration: 0.3,
+        ease: "power2.out"
+      });
+    }
+    setShowPassword(!showPassword);
   };
 
   // ============================================================
@@ -171,20 +254,28 @@ export function SignInPage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+      style={{ 
+        background: "linear-gradient(to bottom right, var(--bg), var(--bg-light), var(--bg))"
+      }}
     >
       <div className="max-w-6xl w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2">
+        <div className="rounded-3xl shadow-2xl overflow-hidden" style={{ backgroundColor: "var(--bg-light)" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ perspective: "1000px" }}>
             
             {/* ============================================================ */}
-            {/* LEFT PANEL: Branding / Marketing */}
+            {/* LEFT PANEL: Branding with floating elements */}
             {/* ============================================================ */}
             <div
               ref={imageRef}
-              className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-12 flex flex-col justify-center items-center text-white"
+              className="relative p-12 flex flex-col justify-center items-center"
+              style={{ 
+                transformStyle: "preserve-3d",
+                background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
+                color: "var(--bg-light)"
+              }}
             >
-              {/* Background image with low opacity */}
+              {/* Background image */}
               <div className="absolute inset-0 opacity-10">
                 <img
                   src="https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlJTIwdGVjaG5vbG9neXxlbnwxfHx8fDE3NzAwNjM4MDl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
@@ -193,12 +284,24 @@ export function SignInPage() {
                 />
               </div>
 
-              {/* Content overlaying background image */}
+              {/* Content */}
               <div className="relative z-10 text-center">
-                {/* App Icon */}
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mb-8 mx-auto">
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center">
-                    <span className="text-4xl font-bold bg-gradient-to-br from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {/* App Icon with bounce animation */}
+                <div 
+                  ref={logoRef}
+                  className="w-20 h-20 backdrop-blur-sm rounded-3xl flex items-center justify-center mb-8 mx-auto"
+                  style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+                >
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--bg-light)" }}>
+                    <span 
+                      className="text-4xl font-bold"
+                      style={{ 
+                        background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text"
+                      }}
+                    >
                       AI
                     </span>
                   </div>
@@ -212,64 +315,59 @@ export function SignInPage() {
                   Transform your resume with the power of AI
                 </p>
 
-                {/* Feature List */}
+                {/* Feature List with floating animation */}
                 <div className="space-y-4 text-left max-w-md mx-auto">
-                  <div className="flex items-center gap-3">
+                  <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span className="text-blue-100">
-                      AI-Powered Tailoring
-                    </span>
+                    <span className="text-blue-100">AI-Powered Tailoring</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span className="text-blue-100">
-                      ATS Optimization
-                    </span>
+                    <span className="text-blue-100">ATS Optimization</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span className="text-blue-100">
-                      100% Secure & Private
-                    </span>
+                    <span className="text-blue-100">100% Secure & Private</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* ============================================================ */}
-            {/* RIGHT PANEL: Sign In / Sign Up Form */}
+            {/* RIGHT PANEL: Form with micro-interactions */}
             {/* ============================================================ */}
-            <div ref={formRef} className="p-12 flex items-center bg-white dark:bg-gray-800">
+            <div 
+              ref={formRef} 
+              className="p-12 flex items-center"
+              style={{ 
+                transformStyle: "preserve-3d",
+                backgroundColor: "var(--bg-light)"
+              }}
+            >
               <div className="max-w-md mx-auto w-full">
                 
-                {/* Form Header - Changes based on isSignUp state */}
+                {/* Form Header */}
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    {isSignUp
-                      ? "Create Account"
-                      : "Welcome Back"}
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: "var(--text)" }}>
+                    {isSignUp ? "Create Account" : "Welcome Back"}
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p style={{ color: "var(--text-muted)" }}>
                     {isSignUp
                       ? "Sign up to start optimizing your resumes"
                       : "Sign in to your account to continue"}
                   </p>
                 </div>
 
-                {/* Sign In / Sign Up Form */}
-                <form
-                  onSubmit={handleSubmit}
-                  className="space-y-6"
-                >
-                  {/* ============================================================ */}
-                  {/* FULL NAME FIELD - Only visible in Sign Up mode */}
-                  {/* ============================================================ */}
+                {/* Sign In / Sign Up Form - Fixed height container to prevent jumping */}
+                <form onSubmit={handleSubmit} className="space-y-6" style={{ minHeight: "400px" }}>
+                  
+                  {/* Full Name Field - Only in Sign Up */}
                   {isSignUp && (
                     <div className="animate-in fade-in duration-200">
                       <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
@@ -281,16 +379,14 @@ export function SignInPage() {
                         type="text"
                         value={formData.name}
                         onChange={handleChange}
-                        required={isSignUp}  // Only required in Sign Up mode
+                        required={isSignUp}
                         placeholder="John Doe"
-                        className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-all"
                       />
                     </div>
                   )}
 
-                  {/* ============================================================ */}
-                  {/* EMAIL FIELD - Always visible */}
-                  {/* ============================================================ */}
+                  {/* Email Field */}
                   <div>
                     <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
                       Email Address
@@ -298,18 +394,16 @@ export function SignInPage() {
                     <Input
                       id="email"
                       name="email"
-                      type="email"  // HTML5 email validation
+                      type="email"
                       value={formData.email}
                       onChange={handleChange}
                       required
                       placeholder="you@example.com"
-                      className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                      className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-all"
                     />
                   </div>
 
-                  {/* ============================================================ */}
-                  {/* PASSWORD FIELD with visibility toggle */}
-                  {/* ============================================================ */}
+                  {/* Password Field with visibility toggle */}
                   <div>
                     <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
                       Password
@@ -318,34 +412,30 @@ export function SignInPage() {
                       <Input
                         id="password"
                         name="password"
-                        type={showPassword ? "text" : "password"}  // Toggle type
+                        type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleChange}
                         required
                         placeholder="••••••••"
-                        className="pr-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        className="pr-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-all"
                       />
-                      {/* Eye icon button to toggle password visibility */}
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                        onClick={togglePasswordVisibility}
+                        className="password-toggle-icon absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       >
                         {showPassword ? (
-                          <EyeOff className="h-5 w-5" />  // Closed eye = hide password
+                          <EyeOff className="h-5 w-5" />
                         ) : (
-                          <Eye className="h-5 w-5" />     // Open eye = show password
+                          <Eye className="h-5 w-5" />
                         )}
                       </button>
                     </div>
                   </div>
 
-                  {/* ============================================================ */}
-                  {/* REMEMBER ME & FORGOT PASSWORD - Only in Sign In mode */}
-                  {/* ============================================================ */}
+                  {/* Remember Me & Forgot Password - Sign In only */}
                   {!isSignUp && (
                     <div className="flex items-center justify-between animate-in fade-in duration-200">
-                      {/* Remember Me checkbox */}
                       <div className="flex items-center gap-2">
                         <Checkbox
                           id="rememberMe"
@@ -365,7 +455,6 @@ export function SignInPage() {
                         </Label>
                       </div>
                       
-                      {/* Forgot password link */}
                       <a
                         href="#"
                         className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
@@ -375,39 +464,35 @@ export function SignInPage() {
                     </div>
                   )}
 
-                  {/* ============================================================ */}
-                  {/* SUBMIT BUTTON - Text changes based on mode */}
-                  {/* ============================================================ */}
+                  {/* Submit Button */}
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                    className="w-full transition-all"
+                    style={{ 
+                      background: "linear-gradient(to right, var(--primary), var(--secondary))",
+                      color: "var(--bg-light)"
+                    }}
                   >
                     {isSignUp ? "Create Account" : "Sign In"}
                   </Button>
 
-                  {/* ============================================================ */}
-                  {/* TOGGLE BETWEEN SIGN IN / SIGN UP */}
-                  {/* ============================================================ */}
+                  {/* Toggle between Sign In / Sign Up */}
                   <div className="text-center">
                     <button
                       type="button"
-                      onClick={() => setIsSignUp(!isSignUp)}  // Toggle mode
+                      onClick={() => setIsSignUp(!isSignUp)}
                       className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       {isSignUp ? (
                         <>
                           Already have an account?{" "}
-                          <span className="font-semibold">
-                            Sign In
-                          </span>
+                          <span className="font-semibold">Sign In</span>
                         </>
                       ) : (
                         <>
                           Don't have an account?{" "}
-                          <span className="font-semibold">
-                            Sign Up
-                          </span>
+                          <span className="font-semibold">Sign Up</span>
                         </>
                       )}
                     </button>
@@ -417,11 +502,9 @@ export function SignInPage() {
                 {/* Footer Text */}
                 <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                    By continuing, you agree to our Terms of
-                    Service and Privacy Policy.
+                    By continuing, you agree to our Terms of Service and Privacy Policy.
                     <br />
-                    Powered by AWS Cognito for secure
-                    authentication.
+                    Powered by AWS Cognito for secure authentication.
                   </p>
                 </div>
               </div>
@@ -430,7 +513,7 @@ export function SignInPage() {
         </div>
       </div>
       
-      {/* Toast notifications container */}
+      {/* Toast notifications */}
       <Toaster />
     </div>
   );
