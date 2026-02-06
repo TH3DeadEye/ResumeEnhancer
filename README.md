@@ -1,23 +1,23 @@
 # AI Resume Enhancer - Frontend ✨
 
-> **Note:** This is the frontend branch. Backend implementation is maintained separately.
+> **Note:** This is the frontend branch built with **Next.js 15**. Backend AWS integration is ready but not yet connected.
 
-A modern, responsive frontend for the AI Resume Enhancer platform. Built with React, TypeScript, and GSAP animations, featuring a custom OKLCH color scheme and smooth user interactions.
+A modern, responsive Next.js frontend for the AI Resume Enhancer platform. Features server-side rendering, API routes ready for AWS integration, GSAP animations, and a custom OKLCH color scheme.
 
 ## 🌟 Features
 
-- **Modern UI/UX** - Beautiful, responsive interface with smooth animations
-- **Dark Mode Support** - Custom OKLCH color scheme with light/dark themes
-- **Advanced Animations** - Parallax scrolling, staggered entrances, and micro-interactions
-- **Fully Responsive** - Mobile-first design with Tailwind CSS
+- **Next.js 15 with App Router** - Modern React framework with server-side rendering
+- **API Routes Ready** - Server-side API endpoints prepared for AWS services
+- **Advanced Animations** - GSAP with parallax scrolling and micro-interactions
+- **Custom Color Scheme** - OKLCH colors with full dark mode support
 - **Type Safe** - Full TypeScript implementation
-- **Component Library** - Built with Shadcn/ui
+- **Optimized Performance** - Image optimization and code splitting
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 16+ and npm
+- Node.js 18+ and npm
 
 ### Installation
 
@@ -32,82 +32,110 @@ A modern, responsive frontend for the AI Resume Enhancer platform. Built with Re
    npm install
    ```
 
-3. Start the development server:
+3. Create environment file:
+   ```bash
+   cp .env.local.example .env.local
+   # Edit .env.local with your AWS credentials when ready
+   ```
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
 
-4. Open `http://localhost:5173` in your browser
+5. Open `http://localhost:3000` in your browser
 
 ## 🎨 Tech Stack
 
-- **React 18** - UI framework
+- **Next.js 15** - React framework with App Router
 - **TypeScript 5** - Type safety
-- **Vite** - Build tool and dev server
 - **Tailwind CSS** - Utility-first styling
 - **GSAP** - Professional animations
 - **Shadcn/ui** - Component library
-- **Lucide React** - Icon set
+- **next-themes** - Dark mode support
 
 ## 📁 Project Structure
 
 ```
 AI Enhancer/
-├── src/
-│   ├── app/
-│   │   ├── components/
-│   │   │   ├── hero-section.tsx
-│   │   │   ├── features-section.tsx
-│   │   │   ├── about-section.tsx
-│   │   │   ├── contact-section.tsx
-│   │   │   ├── signin-page.tsx
-│   │   │   ├── navigation.tsx
-│   │   │   └── ui/              # Reusable components
-│   │   └── App.tsx
-│   ├── styles/
-│   │   ├── theme.css            # Color variables
-│   │   └── tailwind.css
-│   └── main.tsx
-└── package.json
+├── app/
+│   ├── api/                    # API routes (ready for AWS)
+│   │   ├── auth/              # Cognito authentication
+│   │   ├── resume/            # Upload, enhance, download
+│   │   └── contact/           # Contact form
+│   ├── components/
+│   │   ├── hero-section.tsx
+│   │   ├── features-section.tsx
+│   │   ├── about-section.tsx
+│   │   ├── contact-section.tsx
+│   │   ├── signin-page.tsx
+│   │   ├── navigation.tsx
+│   │   └── ui/                # Reusable components
+│   ├── layout.tsx             # Root layout
+│   ├── page.tsx               # Home page
+│   └── globals.css            # Global styles
+├── lib/
+│   └── utils.ts               # Utility functions
+└── public/                    # Static assets
 ```
 
-## ✨ Animation Features
+## 🔌 AWS Integration (Ready)
 
-- Parallax scrolling effects
-- Staggered entrance animations with elastic/bounce effects
-- Smooth page transitions
-- Scroll progress indicator
-- Hover micro-interactions
-- Active section highlighting
+The frontend has API routes ready to connect to your AWS backend:
 
-## 📱 Pages & Components
+### Architecture Overview
+Based on your AWS infrastructure diagram:
 
-### Landing Page
-- **Hero Section** - Main banner with animated statistics
-- **Features Section** - 6 feature cards
-- **About Section** - Team and project info
-- **Contact Section** - Contact form
+**Authentication:**
+- Amazon Cognito → `/api/auth/signin`, `/api/auth/signup`
 
-### Authentication
-- **Sign In/Sign Up** - Authentication UI (ready for backend integration)
+**Resume Upload Flow:**
+1. Generate S3 presigned URL → `/api/resume/upload`
+2. Client uploads directly to S3
+3. S3 triggers Lambda (Extraction + Parser)
+4. Amazon Textract parses resume
+5. DynamoDB stores metadata
 
-### Navigation
-- Sticky header with scroll effects
-- Active section highlighting
-- Mobile-responsive menu
-- Theme toggle
+**Resume Enhancement Flow:**
+1. Submit job description → `/api/resume/enhance`
+2. Lambda invokes Amazon Bedrock (Claude 3.5 Sonnet)
+3. AI generates enhanced resume
+4. Store in S3
 
-## 🔌 Backend Integration
+**Download Flow:**
+- Generate presigned URL → `/api/resume/download`
 
-The frontend is ready for backend connection with integration points in:
-- Authentication forms (AWS Cognito ready)
-- Contact form submission
-- Resume upload functionality
+### Integration Status
+
+🟢 **Frontend Complete** - All UI and animations done  
+🟡 **API Routes Created** - Server-side endpoints ready  
+🔴 **AWS Not Connected** - Awaiting backend implementation  
+
+### When Ready to Connect
+
+1. Install AWS SDK:
+   ```bash
+   npm install @aws-sdk/client-cognito-identity-provider @aws-sdk/client-s3 @aws-sdk/s3-request-presigner @aws-sdk/client-lambda @aws-sdk/client-bedrock-runtime
+   ```
+
+2. Fill in `.env.local` with your AWS credentials
+
+3. Implement AWS calls in API routes (see TODOs in route files)
+
+4. Test authentication flow
+
+5. Test resume upload and enhancement
+
+## 📱 Pages
+
+- **Landing Page** - Hero, features, about, contact sections
+- **Sign In/Up** - Authentication UI (calls `/api/auth/*`)
+- **API Routes** - Server-side endpoints for AWS integration
 
 ## 👥 Team
 
 **Team KMR**
-- Arman Milani
+- Arman Milani  
 - Ramtin Loghmani
 
 **COMP 2154 - System Development Project**  
@@ -116,20 +144,26 @@ George Brown College
 ## 📝 Available Scripts
 
 ```bash
-npm run dev      # Start development server
+npm run dev      # Start development server (port 3000)
 npm run build    # Build for production
-npm run preview  # Preview production build
+npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
-## 🙏 Acknowledgments
+## 🎯 Next Steps
 
-- GSAP - Animation library
-- Shadcn/ui - Component primitives
-- Tailwind CSS - Styling framework
-- AWS Bedrock AI - Backend integration (separate branch)
+1. ✅ Frontend UI complete
+2. ✅ API routes structure ready
+3. ⏳ Connect AWS services (Cognito, S3, Lambda, Bedrock)
+4. ⏳ Test end-to-end flow
+5. ⏳ Deploy to production
+
+## 📄 License
+
+This project is part of an academic course at George Brown College.
 
 ---
 
-**Status:** ✅ UI Complete | ⏳ Awaiting Backend Integration  
+**Status:** ✅ UI Complete | 🟡 API Ready | 🔴 AWS Integration Pending  
+**Framework:** Next.js 15 with App Router  
 Built with ❤️ by Team KMR

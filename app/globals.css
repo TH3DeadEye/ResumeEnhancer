@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-size: 16px;
+  
+  /* Light Mode Colors - OKLCH Custom Scheme (Hue 174) */
+  --bg-dark: oklch(0.92 0.01 174);
+  --bg: oklch(0.96 0.01 174);
+  --bg-light: oklch(1 0.01 174);
+  --text: oklch(0.15 0.02 174);
+  --text-muted: oklch(0.4 0.02 174);
+  --highlight: oklch(1 0.02 174);
+  --border: oklch(0.6 0.02 174);
+  --border-muted: oklch(0.7 0.02 174);
+  --primary: oklch(0.4 0.1 174);
+  --secondary: oklch(0.4 0.1 354);
+  --danger: oklch(0.5 0.05 30);
+  --warning: oklch(0.5 0.05 100);
+  --success: oklch(0.5 0.05 160);
+  --info: oklch(0.5 0.05 260);
+  
+  /* Tailwind/Shadcn compatibility */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-light);
+  --card-foreground: var(--text);
+  --popover: var(--bg-light);
+  --popover-foreground: var(--text);
+  --primary-foreground: oklch(0.98 0.01 182);
+  --secondary-foreground: oklch(0.15 0.01 182);
+  --muted: var(--bg-light);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-light);
+  --accent-foreground: var(--text);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(0.98 0.01 182);
+  --input: var(--border);
+  --ring: var(--primary);
+  --radius: 0.625rem;
+}
+
+.dark {
+  /* Dark Mode Colors */
+  --bg-dark: oklch(0.12 0.01 174);
+  --bg: oklch(0.16 0.01 174);
+  --bg-light: oklch(0.20 0.01 174);
+  --text: oklch(0.95 0.02 174);
+  --text-muted: oklch(0.65 0.02 174);
+  --highlight: oklch(0.4 0.02 174);
+  --border: oklch(0.35 0.02 174);
+  --border-muted: oklch(0.28 0.02 174);
+  --primary: oklch(0.55 0.1 174);
+  --secondary: oklch(0.55 0.1 354);
+  --danger: oklch(0.6 0.05 30);
+  --warning: oklch(0.65 0.05 100);
+  --success: oklch(0.6 0.05 160);
+  --info: oklch(0.6 0.05 260);
+  
+  /* Tailwind/Shadcn compatibility */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-light);
+  --card-foreground: var(--text);
+  --popover: var(--bg-light);
+  --popover-foreground: var(--text);
+  --primary-foreground: oklch(0.1 0.01 182);
+  --secondary-foreground: oklch(0.1 0.01 182);
+  --muted: var(--bg-light);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--bg-light);
+  --accent-foreground: var(--text);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text);
+  --input: var(--border);
+  --ring: var(--primary);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
