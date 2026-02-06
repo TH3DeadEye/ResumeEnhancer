@@ -179,17 +179,17 @@ export function FeaturesSection() {
   // ============================================================
   
   return (
-    <section id="features" ref={sectionRef} className="py-24" style={{ backgroundColor: "var(--bg)" }}>
+    <section id="features" ref={sectionRef} className="py-16 sm:py-24" style={{ backgroundColor: "var(--bg)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ============================================================ */}
         {/* SECTION TITLE - Animated on scroll */}
         {/* ============================================================ */}
-        <div ref={titleRef} className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: "var(--text)" }}>
+        <div ref={titleRef} className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 px-4" style={{ color: "var(--text)" }}>
             Powerful Features for Job Seekers
           </h2>
-          <p className="text-xl max-w-3xl mx-auto" style={{ color: "var(--text-muted)" }}>
+          <p className="text-lg sm:text-xl max-w-3xl mx-auto px-4" style={{ color: "var(--text-muted)" }}>
             Everything you need to create perfect, tailored resumes that get noticed by recruiters
             and pass ATS filters.
           </p>
@@ -198,7 +198,7 @@ export function FeaturesSection() {
         {/* ============================================================ */}
         {/* FEATURE CARDS GRID - Staggered animations with hover effects */}
         {/* ============================================================ */}
-        <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             

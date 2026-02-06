@@ -85,3 +85,42 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Ensure all interactive elements have minimum touch target size of 44x44px */
+  button, 
+  a[href], 
+  input[type="submit"], 
+  input[type="button"],
+  [role="button"],
+  [tabindex]:not([tabindex="-1"]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve text readability on mobile */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+  
+  /* Better tap highlight */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Touch-friendly utilities */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}

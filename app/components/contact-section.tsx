@@ -277,17 +277,17 @@ export function ContactSection() {
   // ============================================================
   
   return (
-    <section id="contact" ref={sectionRef} className="py-24" style={{ backgroundColor: "var(--bg)" }}>
+    <section id="contact" ref={sectionRef} className="py-16 sm:py-24" style={{ backgroundColor: "var(--bg)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ============================================================ */}
         {/* SECTION HEADER - Animated entrance */}
         {/* ============================================================ */}
-        <div ref={titleRef} className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+        <div ref={titleRef} className="text-center mb-12 sm:mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white px-4">
             Get In Touch
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
             Have questions? We'd love to hear from you. Send us a message and we'll respond as soon
             as possible.
           </p>
@@ -296,7 +296,7 @@ export function ContactSection() {
         {/* ============================================================ */}
         {/* TWO COLUMN LAYOUT */}
         {/* ============================================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-start">
           
           {/* LEFT COLUMN: Contact Information with animated cards */}
           <div ref={contactInfoRef} className="space-y-8">
@@ -420,7 +420,8 @@ export function ContactSection() {
               <Button
                 type="submit"
                 size="lg"
-                className="submit-button w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                className="submit-button w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white touch-manipulation"
+                style={{ minHeight: "48px" }}
               >
                 Send Message <Send className="ml-2 h-5 w-5" />
               </Button>

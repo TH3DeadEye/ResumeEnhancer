@@ -280,13 +280,13 @@ export function SignInPage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+      className="min-h-screen flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8"
       style={{ 
         background: "linear-gradient(to bottom right, var(--bg), var(--bg-light), var(--bg))"
       }}
     >
       <div className="max-w-6xl w-full">
-        <div className="rounded-3xl shadow-2xl overflow-hidden" style={{ backgroundColor: "var(--bg-light)" }}>
+        <div className="rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden" style={{ backgroundColor: "var(--bg-light)" }}>
           <div className="grid grid-cols-1 lg:grid-cols-2" style={{ perspective: "1000px" }}>
             
             {/* ============================================================ */}
@@ -294,7 +294,7 @@ export function SignInPage() {
             {/* ============================================================ */}
             <div
               ref={imageRef}
-              className="relative p-12 flex flex-col justify-center items-center"
+              className="relative p-8 sm:p-12 flex flex-col justify-center items-center min-h-[300px] sm:min-h-0"
               style={{ 
                 transformStyle: "preserve-3d",
                 background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
@@ -315,12 +315,12 @@ export function SignInPage() {
                 {/* App Icon with bounce animation */}
                 <div 
                   ref={logoRef}
-                  className="w-20 h-20 backdrop-blur-sm rounded-3xl flex items-center justify-center mb-8 mx-auto"
+                  className="w-16 h-16 sm:w-20 sm:h-20 backdrop-blur-sm rounded-2xl sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-8 mx-auto"
                   style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
                 >
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--bg-light)" }}>
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--bg-light)" }}>
                     <span 
-                      className="text-4xl font-bold"
+                      className="text-3xl sm:text-4xl font-bold"
                       style={{ 
                         background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
                         WebkitBackgroundClip: "text",
@@ -334,32 +334,32 @@ export function SignInPage() {
                 </div>
 
                 {/* App Name & Tagline */}
-                <h1 className="text-4xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
                   AI Resume Enhancer
                 </h1>
-                <p className="text-xl mb-8 text-blue-100">
+                <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
                   Transform your resume with the power of AI
                 </p>
 
                 {/* Feature List with floating animation */}
-                <div className="space-y-4 text-left max-w-md mx-auto">
+                <div className="space-y-3 sm:space-y-4 text-left max-w-md mx-auto hidden sm:block">
                   <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span className="text-blue-100">AI-Powered Tailoring</span>
+                    <span className="text-sm sm:text-base text-blue-100">AI-Powered Tailoring</span>
                   </div>
                   <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span className="text-blue-100">ATS Optimization</span>
+                    <span className="text-sm sm:text-base text-blue-100">ATS Optimization</span>
                   </div>
                   <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
                     <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <span className="text-blue-100">100% Secure & Private</span>
+                    <span className="text-sm sm:text-base text-blue-100">100% Secure & Private</span>
                   </div>
                 </div>
               </div>
@@ -370,7 +370,7 @@ export function SignInPage() {
             {/* ============================================================ */}
             <div 
               ref={formRef} 
-              className="p-12 flex items-center"
+              className="p-6 sm:p-8 lg:p-12 flex items-center"
               style={{ 
                 transformStyle: "preserve-3d",
                 backgroundColor: "var(--bg-light)"
@@ -379,11 +379,11 @@ export function SignInPage() {
               <div className="max-w-md mx-auto w-full">
                 
                 {/* Form Header */}
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: "var(--text)" }}>
+                <div className="text-center mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: "var(--text)" }}>
                     {isSignUp ? "Create Account" : "Welcome Back"}
                   </h2>
-                  <p style={{ color: "var(--text-muted)" }}>
+                  <p className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>
                     {isSignUp
                       ? "Sign up to start optimizing your resumes"
                       : "Sign in to your account to continue"}
@@ -391,7 +391,7 @@ export function SignInPage() {
                 </div>
 
                 {/* Sign In / Sign Up Form - Fixed height container to prevent jumping */}
-                <form onSubmit={handleSubmit} className="space-y-6" style={{ minHeight: "400px" }}>
+                <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6" style={{ minHeight: "350px" }}>
                   
                   {/* Full Name Field - Only in Sign Up */}
                   {isSignUp && (
@@ -494,10 +494,11 @@ export function SignInPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full transition-all"
+                    className="w-full transition-all touch-manipulation"
                     style={{ 
                       background: "linear-gradient(to right, var(--primary), var(--secondary))",
-                      color: "var(--bg-light)"
+                      color: "var(--bg-light)",
+                      minHeight: "48px"
                     }}
                   >
                     {isSignUp ? "Create Account" : "Sign In"}

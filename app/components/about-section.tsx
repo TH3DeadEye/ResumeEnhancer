@@ -248,14 +248,14 @@ export function AboutSection() {
     <section 
       id="about" 
       ref={sectionRef} 
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ 
         perspective: "1000px",
         background: "linear-gradient(to bottom right, var(--bg-dark), var(--bg))"
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           
           {/* ============================================================ */}
           {/* LEFT SIDE: Team Image with animated badge */}
@@ -285,19 +285,19 @@ export function AboutSection() {
           {/* RIGHT SIDE: Content with animated elements */}
           {/* ============================================================ */}
           <div ref={contentRef} style={{ transformStyle: "preserve-3d" }}>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-6" style={{ color: "var(--text)" }}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 px-4 lg:px-0" style={{ color: "var(--text)" }}>
               About Our Project
             </h2>
             
             {/* Introduction paragraphs */}
-            <p className="text-lg mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            <p className="text-base sm:text-lg mb-6 leading-relaxed px-4 lg:px-0" style={{ color: "var(--text-muted)" }}>
               The <span className="font-semibold" style={{ color: "var(--primary)" }}>AI Resume Enhancer</span> is a
               cutting-edge, cloud-native web application developed as part of the{" "}
               <span className="font-semibold">COMP 2154 System Development Project</span>. Our
               mission is to revolutionize the job application process for students and
               professionals.
             </p>
-            <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            <p className="text-base sm:text-lg mb-8 leading-relaxed px-4 lg:px-0" style={{ color: "var(--text-muted)" }}>
               Built on a serverless AWS architecture using Lambda, S3, DynamoDB, and Amazon
               Bedrock, our platform leverages Generative AI to automatically tailor resumes to
               specific job descriptions, helping candidates bypass ATS filters and increase their

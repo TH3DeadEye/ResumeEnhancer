@@ -310,12 +310,22 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
           {/* ============================================================ */}
           {/* MOBILE MENU BUTTON */}
           {/* ============================================================ */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden text-gray-900 dark:text-white"
-          >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <div className="flex items-center gap-3 md:hidden">
+            <ThemeToggle />
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="relative z-50 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              style={{ 
+                color: "var(--text)",
+                minWidth: "44px",
+                minHeight: "44px"
+              }}
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
 
         {/* ============================================================ */}
@@ -324,20 +334,26 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
         {isMobileMenuOpen && (
           <div 
             ref={mobileMenuRef}
-            className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-800 overflow-hidden"
+            className="md:hidden border-t overflow-hidden"
+            style={{
+              backgroundColor: "var(--bg-light)",
+              borderColor: "var(--border)"
+            }}
           >
-            <div className="px-4 py-6 space-y-4">
+            <div className="px-4 py-6 space-y-3">
               {currentPage === "landing" ? (
                 <>
                   {["home", "features", "about", "contact"].map((section) => (
                     <button
                       key={section}
                       onClick={() => scrollToSection(section)}
-                      className={`mobile-menu-item block w-full text-left py-2 ${
-                        activeSection === section
-                          ? "text-blue-600 dark:text-blue-400 font-semibold"
-                          : "text-gray-700 dark:text-gray-300 hover:text-blue-600"
-                      }`}
+                      className="mobile-menu-item block w-full text-left py-3 px-4 rounded-lg transition-all touch-manipulation"
+                      style={{
+                        color: activeSection === section ? "var(--primary)" : "var(--text)",
+                        backgroundColor: activeSection === section ? "color-mix(in oklch, var(--primary), transparent 90%)" : "transparent",
+                        fontWeight: activeSection === section ? 600 : 400,
+                        minHeight: "44px"
+                      }}
                     >
                       {section.charAt(0).toUpperCase() + section.slice(1)}
                     </button>
@@ -346,7 +362,11 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
               ) : (
                 <button
                   onClick={() => onNavigate("landing")}
-                  className="mobile-menu-item block w-full text-left text-gray-700 dark:text-gray-300 hover:text-blue-600"
+                  className="mobile-menu-item block w-full text-left py-3 px-4 rounded-lg transition-all touch-manipulation"
+                  style={{
+                    color: "var(--text)",
+                    minHeight: "44px"
+                  }}
                 >
                   Back to Home
                 </button>
@@ -354,14 +374,15 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
               
               <Button
                 onClick={() => onNavigate("signin")}
-                className="mobile-menu-item w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                className="mobile-menu-item w-full text-base py-6 touch-manipulation"
+                style={{ 
+                  background: "linear-gradient(to right, var(--primary), var(--secondary))",
+                  color: "var(--bg-light)",
+                  minHeight: "44px"
+                }}
               >
                 Sign In
               </Button>
-              
-              <div className="mobile-menu-item flex justify-center pt-2">
-                <ThemeToggle />
-              </div>
             </div>
           </div>
         )}

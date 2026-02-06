@@ -293,7 +293,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         {/* Main Title - Animated with 3D rotation */}
         <h1
           ref={titleRef}
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 px-4"
           style={{ 
             background: "linear-gradient(to right, var(--primary), var(--secondary), var(--primary))",
             WebkitBackgroundClip: "text",
@@ -309,7 +309,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         {/* Subtitle - Animated with blur effect */}
         <p
           ref={subtitleRef}
-          className="text-xl sm:text-2xl mb-10 max-w-3xl mx-auto leading-relaxed"
+          className="text-lg sm:text-xl md:text-2xl mb-10 max-w-3xl mx-auto leading-relaxed px-4"
           style={{ color: "var(--text-muted)" }}
         >
           AI-powered resume tailoring that automatically optimizes your resume for any job
@@ -317,14 +317,15 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         </p>
 
         {/* Call-to-Action Buttons - Staggered animation with hover effect */}
-        <div ref={buttonsRef} className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div ref={buttonsRef} className="flex flex-col sm:flex-row gap-4 justify-center px-4">
           <Button
             size="lg"
             onClick={onGetStarted}
-            className="text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all"
+            className="text-base sm:text-lg px-6 sm:px-8 py-6 shadow-xl hover:shadow-2xl transition-all touch-manipulation w-full sm:w-auto"
             style={{ 
               background: "linear-gradient(to right, var(--primary), var(--secondary))",
-              color: "var(--bg-light)"
+              color: "var(--bg-light)",
+              minHeight: "48px"
             }}
           >
             Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
@@ -334,11 +335,12 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             size="lg"
             variant="outline"
             onClick={scrollToContact}
-            className="border-2 text-lg px-8 py-6 transition-all"
+            className="border-2 text-base sm:text-lg px-6 sm:px-8 py-6 transition-all touch-manipulation w-full sm:w-auto"
             style={{ 
               borderColor: "var(--border)",
               backgroundColor: "var(--bg-light)",
-              color: "var(--text)"
+              color: "var(--text)",
+              minHeight: "48px"
             }}
           >
             Contact Us
@@ -348,39 +350,39 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         {/* ============================================================ */}
         {/* ANIMATED STATISTICS - Staggered bounce entrance */}
         {/* ============================================================ */}
-        <div ref={statsContainerRef} className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div ref={statsContainerRef} className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-4xl mx-auto px-4">
           
           {/* Stat 1: AI Processing Time */}
           <div 
-            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow"
+            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
             style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
           >
-            <div className="text-4xl font-bold mb-2" style={{ color: "var(--primary)" }}>
+            <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: "var(--primary)" }}>
               {stat1}s
             </div>
-            <div style={{ color: "var(--text-muted)" }}>AI Processing Time</div>
+            <div className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>AI Processing Time</div>
           </div>
           
           {/* Stat 2: ATS Compatibility */}
           <div 
-            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow"
+            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
             style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
           >
-            <div className="text-4xl font-bold mb-2" style={{ color: "var(--secondary)" }}>
+            <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: "var(--secondary)" }}>
               {stat2}%
             </div>
-            <div style={{ color: "var(--text-muted)" }}>ATS Compatibility</div>
+            <div className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>ATS Compatibility</div>
           </div>
           
           {/* Stat 3: Security */}
           <div 
-            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow"
+            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
             style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
           >
-            <div className="text-4xl font-bold mb-2" style={{ color: "var(--success)" }}>
+            <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: "var(--success)" }}>
               {stat3}%
             </div>
-            <div style={{ color: "var(--text-muted)" }}>Secure & Private</div>
+            <div className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>Secure & Private</div>
           </div>
         </div>
       </div>
