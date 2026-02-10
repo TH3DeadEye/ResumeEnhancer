@@ -53,6 +53,6 @@ next-env.d.ts
 /src
 vite.config.ts
 
-# Markdown files (except README)
+# Markdown files (only README.md is tracked)
 *.md
 !README.md

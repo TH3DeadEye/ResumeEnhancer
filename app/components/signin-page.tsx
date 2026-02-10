@@ -1,285 +1,136 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Checkbox } from "./ui/checkbox";
-import { Eye, EyeOff, Sparkles } from "lucide-react";
-import gsap from "gsap";
-import { toast } from "sonner";
-import { Toaster } from "./ui/sonner";
-
-/**
- * SIGN IN / SIGN UP PAGE COMPONENT
- * 
- * Enhanced authentication page featuring:
- * - Smooth two-panel entrance animations
- * - Form toggle animations with morphing effect
- * - Input focus micro-interactions
- * - Password visibility toggle with animation
- * - Floating feature list items
- * - Button hover and click feedback
- */
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { Eye, EyeOff, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { Toaster } from './ui/sonner';
+import { handleSignIn, handleSignUp, handleConfirmSignUp } from '@/lib/auth-service';
 
 export function SignInPage() {
-  // ============================================================
-  // REFS - For GSAP animations
-  // ============================================================
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLDivElement>(null);
-  
-  // ============================================================
-  // STATE MANAGEMENT
-  // ============================================================
-  
-  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
   
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
+    name: '',
+    email: '',
+    password: '',
     rememberMe: false,
   });
 
-  // ============================================================
-  // ENTRANCE ANIMATIONS - Initial page load
-  // ============================================================
-  
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const mainTimeline = gsap.timeline();
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 1: Left panel slides in with 3D effect
-      // ──────────────────────────────────────────────────────────
-      mainTimeline.fromTo(
-        imageRef.current,
-        { x: -120, opacity: 0, rotateY: -15 },
-        { 
-          x: 0, 
-          opacity: 1, 
-          rotateY: 0,
-          duration: 1.2, 
-          ease: "power3.out"
-        },
-      );
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 2: Logo bounce in
-      // ──────────────────────────────────────────────────────────
-      mainTimeline.fromTo(
-        logoRef.current,
-        { scale: 0, rotation: -180 },
-        {
-          scale: 1,
-          rotation: 0,
-          duration: 0.8,
-          ease: "elastic.out(1, 0.6)"
-        },
-        "-=0.8"
-      );
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 3: Feature list items float in with stagger
-      // ──────────────────────────────────────────────────────────
-      const featureItems = imageRef.current?.querySelectorAll(".feature-item");
-      if (featureItems) {
-        mainTimeline.fromTo(
-          Array.from(featureItems),
-          { x: -30, opacity: 0 },
-          {
-            x: 0,
-            opacity: 1,
-            duration: 0.6,
-            stagger: 0.15,
-            ease: "power2.out"
-          },
-          "-=0.6"
-        );
-      }
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 4: Right panel (form) slides in
-      // ──────────────────────────────────────────────────────────
-      mainTimeline.fromTo(
-        formRef.current,
-        { x: 120, opacity: 0, rotateY: 15 },
-        { 
-          x: 0, 
-          opacity: 1, 
-          rotateY: 0,
-          duration: 1.2, 
-          ease: "power3.out" 
-        },
-        "-=1.0"
-      );
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 5: Input focus animations
-      // ──────────────────────────────────────────────────────────
-      const inputs = formRef.current?.querySelectorAll("input");
-      inputs?.forEach((input) => {
-        input.addEventListener("focus", () => {
-          gsap.to(input, {
-            scale: 1.02,
-            borderColor: "rgb(59, 130, 246)",
-            boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-            duration: 0.3,
-            ease: "power2.out"
-          });
-        });
-
-        input.addEventListener("blur", () => {
-          gsap.to(input, {
-            scale: 1,
-            boxShadow: "none",
-            duration: 0.3,
-            ease: "power2.out"
-          });
-        });
-      });
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 6: Continuous floating animation for features
-      // ──────────────────────────────────────────────────────────
-      if (featureItems) {
-        featureItems.forEach((item, index) => {
-          gsap.to(item, {
-            y: -5,
-            duration: 2 + (index * 0.3),
-            ease: "sine.inOut",
-            repeat: -1,
-            yoyo: true
-          });
-        });
-      }
-
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  // ============================================================
-  // TOGGLE ANIMATION - Smooth transition without size jump
-  // ============================================================
-  
-  useEffect(() => {
-    if (formRef.current) {
-      // Simple fade animation to prevent jumping
-      gsap.fromTo(
-        formRef.current,
-        { 
-          opacity: 0,
-        },
-        {
-          opacity: 1,
-          duration: 0.3,
-          ease: "power2.out",
-        },
-      );
-    }
-  }, [isSignUp]);
-
-  // ============================================================
-  // FORM HANDLERS
-  // ============================================================
-  
-  /**
-   * Handles form submission with API call
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    // Button click feedback animation
-    const submitButton = formRef.current?.querySelector("button[type='submit']");
-    if (submitButton) {
-      gsap.to(submitButton, {
-        scale: 0.95,
-        duration: 0.1,
-        yoyo: true,
-        repeat: 1,
-        ease: "power2.inOut"
-      });
-    }
-
-    // Call appropriate API
     try {
-      const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/signin';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
+      if (needsVerification) {
+        // Verify email with code
+        const result = await handleConfirmSignUp({
+          email: formData.email,
+          code: verificationCode,
+        });
+
+        if (result.success) {
+          toast.success('Email verified! You can now sign in.');
+          setNeedsVerification(false);
+          setIsSignUp(false);
+          setVerificationCode('');
+        } else {
+          toast.error(result.error || 'Verification failed');
+        }
+      } else if (isSignUp) {
+        // Sign up with Cognito
+        const result = await handleSignUp({
           email: formData.email,
           password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        if (isSignUp) {
-          toast.success("Account created successfully! Welcome to AI Resume Enhancer.");
-        } else {
-          toast.success("Signed in successfully! Redirecting to dashboard...");
-          // TODO: Store tokens and redirect to dashboard
-          // localStorage.setItem('accessToken', data.tokens.accessToken);
-        }
-
-        // Reset form
-        setFormData({
-          name: "",
-          email: "",
-          password: "",
-          rememberMe: false,
+          name: formData.name,
         });
+
+        if (result.success) {
+          toast.success('Account created! Check your email for verification code.');
+          setNeedsVerification(true);
+        } else {
+          // If user already exists, switch to sign in
+          if (result.error?.includes('already registered')) {
+            toast.error(result.error);
+            setTimeout(() => {
+              setIsSignUp(false);
+            }, 2000);
+          } else {
+            toast.error(result.error || 'Sign up failed');
+          }
+        }
       } else {
-        // Show info message about AWS not being connected yet
-        toast.info(data.message);
+        // Sign in with Cognito
+        const result = await handleSignIn({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (result.success) {
+          console.log('Sign in successful, checking session...');
+          
+          // Verify session is established before redirect
+          const { fetchAuthSession } = await import('aws-amplify/auth');
+          const session = await fetchAuthSession();
+          console.log('Session tokens:', {
+            accessToken: !!session.tokens?.accessToken,
+            idToken: !!session.tokens?.idToken,
+          });
+          
+          if (session.tokens) {
+            toast.success('Signed in successfully! Redirecting...');
+            
+            // Use router.push for proper Next.js navigation
+            setTimeout(() => {
+              console.log('Redirecting to dashboard...');
+              router.push('/dashboard');
+              router.refresh();
+            }, 1000);
+          } else {
+            toast.error('Session not established. Please try again.');
+          }
+        } else {
+          // If needs verification
+          if (result.error?.includes('verify your email')) {
+            toast.error(result.error);
+            setNeedsVerification(true);
+            setIsSignUp(true);
+          } else if (result.error?.includes('Please sign up first')) {
+            toast.error(result.error);
+            setTimeout(() => {
+              setIsSignUp(true);
+            }, 2000);
+          } else {
+            toast.error(result.error || 'Sign in failed');
+          }
+        }
       }
-    } catch (error) {
-      toast.error("Authentication error. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || 'Authentication failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  /**
-   * Updates form state on input change
-   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
-  /**
-   * Toggles password visibility with animation
-   */
-  const togglePasswordVisibility = () => {
-    const eyeIcon = formRef.current?.querySelector(".password-toggle-icon");
-    if (eyeIcon) {
-      gsap.to(eyeIcon, {
-        rotation: 180,
-        duration: 0.3,
-        ease: "power2.out"
-      });
-    }
-    setShowPassword(!showPassword);
-  };
-
-  // ============================================================
-  // RENDER
-  // ============================================================
-  
   return (
     <div
-      ref={containerRef}
       className="min-h-screen flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8"
       style={{ 
         background: "linear-gradient(to bottom right, var(--bg), var(--bg-light), var(--bg))"
@@ -287,21 +138,16 @@ export function SignInPage() {
     >
       <div className="max-w-6xl w-full">
         <div className="rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden" style={{ backgroundColor: "var(--bg-light)" }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2" style={{ perspective: "1000px" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2">
             
-            {/* ============================================================ */}
-            {/* LEFT PANEL: Branding with floating elements */}
-            {/* ============================================================ */}
+            {/* Left Panel: Branding */}
             <div
-              ref={imageRef}
               className="relative p-8 sm:p-12 flex flex-col justify-center items-center min-h-[300px] sm:min-h-0"
               style={{ 
-                transformStyle: "preserve-3d",
                 background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
                 color: "var(--bg-light)"
               }}
             >
-              {/* Background image */}
               <div className="absolute inset-0 opacity-10">
                 <img
                   src="https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlJTIwdGVjaG5vbG9neXxlbnwxfHx8fDE3NzAwNjM4MDl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
@@ -310,228 +156,240 @@ export function SignInPage() {
                 />
               </div>
 
-              {/* Content */}
               <div className="relative z-10 text-center">
-                {/* App Icon with bounce animation */}
-                <div 
-                  ref={logoRef}
-                  className="w-16 h-16 sm:w-20 sm:h-20 backdrop-blur-sm rounded-2xl sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-8 mx-auto"
+                {/* Logo */}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 backdrop-blur-sm rounded-2xl sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-8 mx-auto"
                   style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
                 >
                   <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--bg-light)" }}>
-                    <span 
-                      className="text-3xl sm:text-4xl font-bold"
-                      style={{ 
-                        background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text"
-                      }}
-                    >
-                      AI
-                    </span>
+                    <span className="text-3xl sm:text-4xl font-bold" style={{ 
+                      background: "linear-gradient(to bottom right, var(--primary), var(--secondary))",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                    }}>AI</span>
                   </div>
                 </div>
 
-                {/* App Name & Tagline */}
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
                   AI Resume Enhancer
                 </h1>
                 <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-blue-100">
-                  Transform your resume with the power of AI
+                  Transform your resume with AI
                 </p>
 
-                {/* Feature List with floating animation */}
+                {/* Features */}
                 <div className="space-y-3 sm:space-y-4 text-left max-w-md mx-auto hidden sm:block">
-                  <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="h-4 w-4" />
+                  {['AI-Powered Tailoring', 'ATS Optimization', '100% Secure & Private'].map((text) => (
+                    <div key={text} className="flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
+                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm sm:text-base text-blue-100">{text}</span>
                     </div>
-                    <span className="text-sm sm:text-base text-blue-100">AI-Powered Tailoring</span>
-                  </div>
-                  <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm sm:text-base text-blue-100">ATS Optimization</span>
-                  </div>
-                  <div className="feature-item flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm sm:text-base text-blue-100">100% Secure & Private</span>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* ============================================================ */}
-            {/* RIGHT PANEL: Form with micro-interactions */}
-            {/* ============================================================ */}
-            <div 
-              ref={formRef} 
-              className="p-6 sm:p-8 lg:p-12 flex items-center"
-              style={{ 
-                transformStyle: "preserve-3d",
-                backgroundColor: "var(--bg-light)"
-              }}
-            >
+            {/* Right Panel: Form */}
+            <div className="p-6 sm:p-8 lg:p-12 flex items-center" style={{ backgroundColor: "var(--bg-light)" }}>
               <div className="max-w-md mx-auto w-full">
                 
-                {/* Form Header */}
+                {/* Header */}
                 <div className="text-center mb-6 sm:mb-8">
                   <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: "var(--text)" }}>
-                    {isSignUp ? "Create Account" : "Welcome Back"}
+                    {needsVerification ? "Verify Email" : isSignUp ? "Create Account" : "Welcome Back"}
                   </h2>
                   <p className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>
-                    {isSignUp
-                      ? "Sign up to start optimizing your resumes"
-                      : "Sign in to your account to continue"}
+                    {needsVerification 
+                      ? "Enter the code sent to your email" 
+                      : isSignUp 
+                      ? "Sign up to start optimizing resumes" 
+                      : "Sign in to continue"}
                   </p>
                 </div>
 
-                {/* Sign In / Sign Up Form - Fixed height container to prevent jumping */}
-                <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6" style={{ minHeight: "350px" }}>
+                {/* Form - Fixed height prevents jumping */}
+                <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6" style={{ minHeight: "400px" }}>
                   
-                  {/* Full Name Field - Only in Sign Up */}
-                  {isSignUp && (
-                    <div className="animate-in fade-in duration-200">
-                      <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
-                        Full Name
+                  {needsVerification ? (
+                    /* Verification Code Input */
+                    <div>
+                      <Label htmlFor="code" className="text-gray-700 dark:text-gray-300">
+                        Verification Code
                       </Label>
                       <Input
-                        id="name"
-                        name="name"
+                        id="code"
+                        name="code"
                         type="text"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required={isSignUp}
-                        placeholder="John Doe"
-                        className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-all"
-                      />
-                    </div>
-                  )}
-
-                  {/* Email Field */}
-                  <div>
-                    <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
-                      Email Address
-                    </Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      placeholder="you@example.com"
-                      className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-all"
-                    />
-                  </div>
-
-                  {/* Password Field with visibility toggle */}
-                  <div>
-                    <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
-                      Password
-                    </Label>
-                    <div className="relative mt-1">
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleChange}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
                         required
-                        placeholder="••••••••"
-                        className="pr-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-all"
+                        placeholder="Enter 6-digit code"
+                        maxLength={6}
+                        className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-center text-2xl tracking-widest"
                       />
-                      <button
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="password-toggle-icon absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
+                      <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                        Check your email for the verification code
+                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Name field (sign up only) */}
+                      {isSignUp && (
+                        <div>
+                          <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
+                            Full Name
+                          </Label>
+                          <Input
+                            id="name"
+                            name="name"
+                            type="text"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required={isSignUp}
+                            placeholder="Enter your full name"
+                            className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      )}
 
-                  {/* Remember Me & Forgot Password - Sign In only */}
-                  {!isSignUp && (
-                    <div className="flex items-center justify-between animate-in fade-in duration-200">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="rememberMe"
-                          checked={formData.rememberMe}
-                          onCheckedChange={(checked) =>
-                            setFormData({
-                              ...formData,
-                              rememberMe: checked as boolean,
-                            })
-                          }
-                        />
-                        <Label
-                          htmlFor="rememberMe"
-                          className="text-sm cursor-pointer text-gray-700 dark:text-gray-300"
-                        >
-                          Remember me
+                      {/* Email */}
+                      <div>
+                        <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
+                          Email Address
                         </Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          placeholder="Enter your email"
+                          className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        />
                       </div>
-                      
-                      <a
-                        href="#"
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                      >
-                        Forgot password?
-                      </a>
-                    </div>
+
+                      {/* Password */}
+                      <div>
+                        <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
+                          Password
+                        </Label>
+                        <div className="relative mt-1">
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                            placeholder="Enter your password"
+                            className="pr-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                          >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                        {isSignUp && (
+                          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                            Must be 8+ characters with uppercase, lowercase, and numbers
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Remember me (sign in only) */}
+                      {!isSignUp && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="rememberMe"
+                              checked={formData.rememberMe}
+                              onCheckedChange={(checked) =>
+                                setFormData({ ...formData, rememberMe: checked as boolean })
+                              }
+                            />
+                            <Label htmlFor="rememberMe" className="text-sm cursor-pointer text-gray-700 dark:text-gray-300">
+                              Remember me
+                            </Label>
+                          </div>
+                          <a href="#" className="text-sm" style={{ color: "var(--primary)" }}>
+                            Forgot password?
+                          </a>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Submit Button */}
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full transition-all touch-manipulation"
+                    disabled={isLoading}
+                    className="w-full touch-manipulation"
                     style={{ 
                       background: "linear-gradient(to right, var(--primary), var(--secondary))",
                       color: "var(--bg-light)",
                       minHeight: "48px"
                     }}
                   >
-                    {isSignUp ? "Create Account" : "Sign In"}
+                    {isLoading 
+                      ? 'Loading...' 
+                      : needsVerification 
+                      ? 'Verify Email'
+                      : isSignUp 
+                      ? 'Create Account' 
+                      : 'Sign In'}
                   </Button>
 
-                  {/* Toggle between Sign In / Sign Up */}
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => setIsSignUp(!isSignUp)}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      {isSignUp ? (
-                        <>
-                          Already have an account?{" "}
-                          <span className="font-semibold">Sign In</span>
-                        </>
-                      ) : (
-                        <>
-                          Don't have an account?{" "}
-                          <span className="font-semibold">Sign Up</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  {/* Toggle or Back */}
+                  {!needsVerification && (
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSignUp(!isSignUp);
+                          setFormData({ name: '', email: '', password: '', rememberMe: false });
+                        }}
+                        className="text-sm"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {isSignUp ? (
+                          <>Already have an account? <span className="font-semibold" style={{ color: "var(--primary)" }}>Sign In</span></>
+                        ) : (
+                          <>Don't have an account? <span className="font-semibold" style={{ color: "var(--primary)" }}>Sign Up</span></>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  
+                  {needsVerification && (
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNeedsVerification(false);
+                          setIsSignUp(false);
+                        }}
+                        className="text-sm"
+                        style={{ color: "var(--primary)" }}
+                      >
+                        Back to Sign In
+                      </button>
+                    </div>
+                  )}
                 </form>
 
-                {/* Footer Text */}
-                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                    By continuing, you agree to our Terms of Service and Privacy Policy.
+                {/* Footer */}
+                <div className="mt-8 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
+                  <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+                    By continuing, you agree to our Terms & Privacy Policy.
                     <br />
-                    Powered by AWS Cognito for secure authentication.
+                    Powered by AWS Cognito
                   </p>
                 </div>
               </div>
@@ -540,7 +398,6 @@ export function SignInPage() {
         </div>
       </div>
       
-      {/* Toast notifications */}
       <Toaster />
     </div>
   );

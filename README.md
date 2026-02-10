@@ -59,29 +59,53 @@ A modern, responsive Next.js frontend for the AI Resume Enhancer platform. Featu
 ```
 AI Enhancer/
 ├── app/
-│   ├── api/                    # API routes (ready for AWS)
-│   │   ├── auth/              # Cognito authentication
-│   │   ├── resume/            # Upload, enhance, download
-│   │   └── contact/           # Contact form
+│   ├── api/                          # API routes (ready for AWS)
+│   │   ├── auth/                    # Cognito authentication
+│   │   │   ├── signin/route.ts     # Sign in endpoint
+│   │   │   ├── signup/route.ts     # Sign up endpoint
+│   │   │   └── verify/route.ts     # Token validation
+│   │   ├── resume/                  # Resume operations
+│   │   │   ├── upload/route.ts     # S3 presigned URL
+│   │   │   ├── enhance/route.ts    # Lambda enhancement
+│   │   │   ├── download/route.ts   # Download presigned URL
+│   │   │   └── list/route.ts       # Fetch user resumes
+│   │   └── contact/                 # Contact form
+│   ├── dashboard/                   # Protected dashboard area
+│   │   ├── layout.tsx              # Dashboard layout with nav
+│   │   ├── page.tsx                # Dashboard home
+│   │   ├── upload/                 # Upload resume page
+│   │   └── history/                # Resume history page
 │   ├── components/
+│   │   ├── protected-route.tsx     # Auth wrapper
 │   │   ├── hero-section.tsx
 │   │   ├── features-section.tsx
 │   │   ├── about-section.tsx
 │   │   ├── contact-section.tsx
 │   │   ├── signin-page.tsx
 │   │   ├── navigation.tsx
-│   │   └── ui/                # Reusable components
-│   ├── layout.tsx             # Root layout
-│   ├── page.tsx               # Home page
-│   └── globals.css            # Global styles
+│   │   ├── theme-toggle.tsx
+│   │   └── ui/                     # Shadcn components
+│   ├── layout.tsx                   # Root layout
+│   ├── page.tsx                     # Landing page
+│   └── globals.css                  # Global styles
 ├── lib/
-│   └── utils.ts               # Utility functions
-└── public/                    # Static assets
+│   └── utils.ts                     # Utility functions
+├── public/                          # Static assets
+├── INTEGRATION_PLAN.md              # Merge & integration guide
+└── AWS_INTEGRATION_GUIDE.md         # AWS setup reference
 ```
 
-## 🔌 AWS Integration (Ready)
+## 🔌 AWS Integration
 
-The frontend has API routes ready to connect to your AWS backend:
+### ✅ Integrated Services
+
+**Amazon Cognito** - User authentication (WORKING)
+- Sign up with email verification
+- Sign in with session management
+- Protected routes with token checking
+- User Pool: `us-west-2_qhPzQQqYA`
+
+### 🟡 Ready for Integration
 
 ### Architecture Overview
 Based on your AWS infrastructure diagram:
@@ -108,29 +132,64 @@ Based on your AWS infrastructure diagram:
 ### Integration Status
 
 🟢 **Frontend Complete** - All UI and animations done  
+🟢 **Cognito Auth** - Sign in/up working with email verification  
 🟡 **API Routes Created** - Server-side endpoints ready  
-🔴 **AWS Not Connected** - Awaiting backend implementation  
+🟡 **S3/Lambda/Bedrock** - Ready for integration  
 
-### When Ready to Connect
+### Testing Authentication
+
+```bash
+# Start the dev server
+npm run dev
+
+# Test Sign Up
+1. Click "Sign In" button
+2. Toggle to "Sign Up"
+3. Enter name, email, password (min 8 chars, uppercase, lowercase, numbers)
+4. Click "Create Account"
+5. Check email for 6-digit code
+6. Enter code and verify
+7. Sign in with verified account
+
+# Test Sign In
+1. Enter verified email and password
+2. Click "Sign In"
+3. Redirects to /dashboard ✅
+```
+
+### When Ready to Connect S3/Lambda
 
 1. Install AWS SDK:
    ```bash
-   npm install @aws-sdk/client-cognito-identity-provider @aws-sdk/client-s3 @aws-sdk/s3-request-presigner @aws-sdk/client-lambda @aws-sdk/client-bedrock-runtime
+   npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner @aws-sdk/client-lambda @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
    ```
 
-2. Fill in `.env.local` with your AWS credentials
+2. Fill in `.env.local` with S3 and Lambda details
 
-3. Implement AWS calls in API routes (see TODOs in route files)
+3. Implement AWS calls in API routes
 
-4. Test authentication flow
-
-5. Test resume upload and enhancement
+4. Test resume upload and enhancement
 
 ## 📱 Pages
 
-- **Landing Page** - Hero, features, about, contact sections
-- **Sign In/Up** - Authentication UI (calls `/api/auth/*`)
-- **API Routes** - Server-side endpoints for AWS integration
+### Public Pages
+- **Landing Page** (`/`) - Hero, features, about, contact sections with GSAP animations
+- **Sign In/Up** (`/?page=signin`) - Authentication UI (calls `/api/auth/*`)
+
+### Protected Pages (Dashboard)
+- **Dashboard** (`/dashboard`) - User hub with resume cards, statistics, and quick actions
+- **Upload Resume** (`/dashboard/upload`) - Drag-drop PDF upload with job description input
+- **History** (`/dashboard/history`) - Resume history (placeholder - coming soon)
+
+### API Routes
+- `/api/auth/signin` - Cognito authentication (sign in)
+- `/api/auth/signup` - Cognito user registration
+- `/api/auth/verify` - Token validation
+- `/api/resume/upload` - Generate S3 presigned URL
+- `/api/resume/enhance` - Trigger Lambda enhancement
+- `/api/resume/download` - Generate download presigned URL
+- `/api/resume/list` - Fetch user's resumes from DynamoDB
+- `/api/contact` - Contact form handler
 
 ## 👥 Team
 
@@ -150,13 +209,31 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
-## 🎯 Next Steps
+## 🎯 Current Status
 
-1. ✅ Frontend UI complete
-2. ✅ API routes structure ready
-3. ⏳ Connect AWS services (Cognito, S3, Lambda, Bedrock)
-4. ⏳ Test end-to-end flow
-5. ⏳ Deploy to production
+### ✅ Completed
+- [x] Landing page with GSAP animations
+- [x] Sign In/Sign Up UI
+- [x] Mobile responsive design
+- [x] Dark mode support
+- [x] Dashboard page with statistics
+- [x] Upload resume page (drag-drop)
+- [x] Protected routes structure
+- [x] API route stubs
+
+### ⏳ In Progress
+- [ ] AWS Cognito integration
+- [ ] S3 upload with presigned URLs
+- [ ] Lambda enhancement trigger
+- [ ] DynamoDB data fetching
+- [ ] End-to-end testing
+
+### 📅 Coming Soon
+- [ ] Email verification flow
+- [ ] Password reset
+- [ ] Resume history with filters
+- [ ] Analytics dashboard
+- [ ] Production deployment
 
 ## 📄 License
 

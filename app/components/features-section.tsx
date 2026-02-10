@@ -110,23 +110,24 @@ export function FeaturesSection() {
       const cards = gsap.utils.toArray(".feature-card");
       
       cards.forEach((card: any, index: number) => {
-        // Entrance animation - Faster and more responsive
+        // Entrance animation - Fast and responsive
         gsap.fromTo(
           card,
           {
-            y: 80,
+            y: 60,
             opacity: 0,
-            scale: 0.9,
+            scale: 0.95,
           },
           {
             y: 0,
             opacity: 1,
             scale: 1,
-            duration: 0.6,
+            duration: 0.4,
             ease: "power2.out",
             scrollTrigger: {
               trigger: card,
-              start: "top 85%",
+              start: "top 90%",
+              end: "top 60%",
               toggleActions: "play none none reverse",
             },
           }

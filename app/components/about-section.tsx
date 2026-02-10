@@ -140,21 +140,22 @@ export function AboutSection() {
       const valueCards = gsap.utils.toArray(".about-value-card");
       
       valueCards.forEach((card: any, index: number) => {
-        // Entrance animation - Faster and simpler
+        // Entrance animation - Fast and responsive
         gsap.fromTo(
           card,
           {
-            x: 60,
+            x: 40,
             opacity: 0,
           },
           {
             x: 0,
             opacity: 1,
-            duration: 0.6,
+            duration: 0.4,
             ease: "power2.out",
             scrollTrigger: {
               trigger: card,
-              start: "top 85%",
+              start: "top 90%",
+              end: "top 60%",
               toggleActions: "play none none reverse",
             },
           }

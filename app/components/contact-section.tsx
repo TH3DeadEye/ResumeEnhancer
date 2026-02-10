@@ -284,10 +284,10 @@ export function ContactSection() {
         {/* SECTION HEADER - Animated entrance */}
         {/* ============================================================ */}
         <div ref={titleRef} className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white px-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 px-4" style={{ color: "var(--text)" }}>
             Get In Touch
           </h2>
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4">
+          <p className="text-lg sm:text-xl max-w-2xl mx-auto px-4" style={{ color: "var(--text-muted)" }}>
             Have questions? We'd love to hear from you. Send us a message and we'll respond as soon
             as possible.
           </p>
@@ -301,30 +301,38 @@ export function ContactSection() {
           {/* LEFT COLUMN: Contact Information with animated cards */}
           <div ref={contactInfoRef} className="space-y-8">
             <div>
-              <h3 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+              <h3 className="text-2xl font-bold mb-6" style={{ color: "var(--text)" }}>
                 Contact Information
               </h3>
               
               <div className="space-y-4">
                 {/* Email Contact Card */}
-                <div className="contact-info-card flex items-start gap-4 p-4 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer">
-                  <div className="contact-icon w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="contact-info-card flex items-start gap-4 p-4 rounded-xl transition-colors cursor-pointer" 
+                  style={{ 
+                    backgroundColor: "color-mix(in oklch, var(--primary), transparent 95%)",
+                  }}>
+                  <div className="contact-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "color-mix(in oklch, var(--primary), transparent 90%)" }}>
+                    <Mail className="h-6 w-6" style={{ color: "var(--primary)" }} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Email</h4>
-                    <p className="text-gray-600 dark:text-gray-400">support@airesume.com</p>
+                    <h4 className="font-semibold mb-1" style={{ color: "var(--text)" }}>Email</h4>
+                    <p style={{ color: "var(--text-muted)" }}>support@airesume.com</p>
                   </div>
                 </div>
 
                 {/* Live Chat Info Card */}
-                <div className="contact-info-card flex items-start gap-4 p-4 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer">
-                  <div className="contact-icon w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="contact-info-card flex items-start gap-4 p-4 rounded-xl transition-colors cursor-pointer"
+                  style={{ 
+                    backgroundColor: "color-mix(in oklch, var(--secondary), transparent 95%)",
+                  }}>
+                  <div className="contact-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "color-mix(in oklch, var(--secondary), transparent 90%)" }}>
+                    <MessageSquare className="h-6 w-6" style={{ color: "var(--secondary)" }} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Live Chat</h4>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <h4 className="font-semibold mb-1" style={{ color: "var(--text)" }}>Live Chat</h4>
+                    <p style={{ color: "var(--text-muted)" }}>
                       Available Monday - Friday, 9AM - 5PM EST
                     </p>
                   </div>
@@ -333,20 +341,23 @@ export function ContactSection() {
             </div>
 
             {/* Project Details Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+            <div className="rounded-2xl p-8 hover:shadow-lg transition-shadow"
+              style={{
+                background: "linear-gradient(to bottom right, color-mix(in oklch, var(--primary), transparent 90%), color-mix(in oklch, var(--secondary), transparent 90%))"
+              }}>
+              <h3 className="text-xl font-bold mb-4" style={{ color: "var(--text)" }}>
                 Project Details
               </h3>
-              <div className="space-y-3 text-gray-700 dark:text-gray-400">
+              <div className="space-y-3" style={{ color: "var(--text-muted)" }}>
                 <p>
-                  <span className="font-semibold">Course:</span> COMP 2154 - System Development
+                  <span className="font-semibold" style={{ color: "var(--text)" }}>Course:</span> COMP 2154 - System Development
                   Project
                 </p>
                 <p>
-                  <span className="font-semibold">Team:</span> KMR
+                  <span className="font-semibold" style={{ color: "var(--text)" }}>Team:</span> KMR
                 </p>
                 <p>
-                  <span className="font-semibold">Members:</span> Arman Milani, Ramtin Loghmani
+                  <span className="font-semibold" style={{ color: "var(--text)" }}>Members:</span> Arman Milani, Ramtin Loghmani
                 </p>
               </div>
             </div>
@@ -360,7 +371,8 @@ export function ContactSection() {
               <div className="form-field">
                 <label 
                   htmlFor="name" 
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "var(--text)" }}
                 >
                   Your Name
                 </label>
@@ -371,8 +383,8 @@ export function ContactSection() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  placeholder="John Doe"
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white transition-all"
+                  placeholder="Enter your name"
+                  className="transition-all"
                 />
               </div>
 
@@ -380,7 +392,8 @@ export function ContactSection() {
               <div className="form-field">
                 <label 
                   htmlFor="email" 
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "var(--text)" }}
                 >
                   Email Address
                 </label>
@@ -391,8 +404,8 @@ export function ContactSection() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  placeholder="you@example.com"
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white transition-all"
+                  placeholder="your.email@example.com"
+                  className="transition-all"
                 />
               </div>
 
@@ -400,7 +413,8 @@ export function ContactSection() {
               <div className="form-field">
                 <label 
                   htmlFor="message" 
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "var(--text)" }}
                 >
                   Message
                 </label>
@@ -411,8 +425,8 @@ export function ContactSection() {
                   onChange={handleChange}
                   required
                   rows={6}
-                  placeholder="Tell us more about your inquiry..."
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white transition-all"
+                  placeholder="Tell us about your inquiry..."
+                  className="transition-all"
                 />
               </div>
 
