@@ -243,3 +243,12 @@ backend/.aws-sam/
 
 # SAM build artifacts
 **/.aws-sam/
+
+# AWS Amplify
+amplify/
+.amplify/
+aws-exports.js
+aws-exports.ts
+amplifyconfiguration.json
+
+**/backend/test/**
