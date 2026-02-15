@@ -36,7 +36,8 @@ KMR AI Resume Enhancer analyzes your master resume against a job description and
 - Amazon S3 (file storage)
 - Amazon DynamoDB (metadata)
 - Amazon Bedrock (Claude 3.5 Sonnet)
-- Amazon Textract (document extraction)
+- LangChain
+- PyPdf
 
 ## 🚀 Quick Start
 
