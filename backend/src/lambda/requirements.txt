@@ -1,0 +1,5 @@
+boto3
+pydantic
+langchain-core
+langchain-aws
+pypdf
