@@ -4,8 +4,23 @@ import { Bot, Zap, Shield, FileText, TrendingUp, Clock } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+/**
+ * FEATURES SECTION COMPONENT
+ * 
+ * Enhanced features display with:
+ * - Staggered scroll-triggered animations
+ * - 3D hover tilt and lift effects
+ * - Icon rotation animations
+ * - Parallax scroll effects
+ * - Smooth reversible animations
+ */
+
+// Register GSAP ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
+// ============================================================
+// FEATURES DATA - Edit here to add/modify features
+// ============================================================
 const features = [
   {
     icon: Bot,
@@ -52,37 +67,52 @@ const features = [
 ];
 
 export function FeaturesSection() {
+  // ============================================================
+  // REFS - For GSAP animations
+  // ============================================================
+  
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
+  // ============================================================
+  // SCROLL-TRIGGERED ANIMATIONS
+  // ============================================================
+  
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Title animation with scrub
+      
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 1: Section Title - Fade and slide from below
+      // ──────────────────────────────────────────────────────────
       gsap.fromTo(
         titleRef.current,
         { y: 80, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          ease: "power2.out",
+          ease: "power3.out",
           scrollTrigger: {
             trigger: titleRef.current,
-            start: "top 80%",
-            end: "top 30%",
+            start: "top 85%",
+            end: "top 50%",
             scrub: 1,
             toggleActions: "play none none reverse",
           },
         }
       );
 
-      // Cards animation with scrub - each card animates individually
+      // ──────────────────────────────────────────────────────────
+      // ANIMATION 2: Feature Cards - Enhanced entrance with 3D effect
+      // ──────────────────────────────────────────────────────────
       const cards = gsap.utils.toArray(".feature-card");
+      
       cards.forEach((card: any, index: number) => {
+        // Entrance animation - Faster and more responsive
         gsap.fromTo(
           card,
           {
-            y: 100,
+            y: 80,
             opacity: 0,
             scale: 0.9,
           },
@@ -90,51 +120,119 @@ export function FeaturesSection() {
             y: 0,
             opacity: 1,
             scale: 1,
+            duration: 0.6,
             ease: "power2.out",
             scrollTrigger: {
               trigger: card,
               start: "top 85%",
-              end: "top 40%",
-              scrub: 1.5,
               toggleActions: "play none none reverse",
             },
           }
         );
+
+        // ──────────────────────────────────────────────────────────
+        // ANIMATION 3: Simple hover interactions - Fast and smooth
+        // ──────────────────────────────────────────────────────────
+        const cardElement = card as HTMLElement;
+        const iconElement = cardElement.querySelector(".feature-icon");
+        
+        // Mouse enter - Quick lift
+        cardElement.addEventListener("mouseenter", () => {
+          gsap.to(card, {
+            y: -8,
+            scale: 1.02,
+            duration: 0.2,
+            ease: "power1.out"
+          });
+          
+          // Simple icon rotation
+          if (iconElement) {
+            gsap.to(iconElement, {
+              rotation: 360,
+              duration: 0.4,
+              ease: "power2.out"
+            });
+          }
+        });
+
+        // Mouse leave - Quick return
+        cardElement.addEventListener("mouseleave", () => {
+          gsap.to(card, {
+            y: 0,
+            scale: 1,
+            duration: 0.2,
+            ease: "power1.out"
+          });
+        });
       });
+
     }, sectionRef);
 
+    // Cleanup ScrollTriggers on unmount
     return () => ctx.revert();
   }, []);
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+  
   return (
-    <section id="features" ref={sectionRef} className="py-24 bg-white">
+    <section id="features" ref={sectionRef} className="py-24" style={{ backgroundColor: "var(--bg)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* ============================================================ */}
+        {/* SECTION TITLE - Animated on scroll */}
+        {/* ============================================================ */}
         <div ref={titleRef} className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-gray-900">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: "var(--text)" }}>
             Powerful Features for Job Seekers
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl max-w-3xl mx-auto" style={{ color: "var(--text-muted)" }}>
             Everything you need to create perfect, tailored resumes that get noticed by recruiters
             and pass ATS filters.
           </p>
         </div>
 
+        {/* ============================================================ */}
+        {/* FEATURE CARDS GRID - Staggered animations with hover effects */}
+        {/* ============================================================ */}
         <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
+            
             return (
               <Card
                 key={index}
-                className="feature-card border-none shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50"
+                className="feature-card border-none shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                style={{ 
+                  transformStyle: "preserve-3d",
+                  background: "linear-gradient(to bottom right, var(--bg-light), var(--bg))"
+                }}
               >
                 <CardContent className="p-8">
+                  {/* Icon with gradient background and rotation animation */}
                   <div
-                    className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg`}
+                    className="feature-icon w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
+                    style={{
+                      background: index % 3 === 0 
+                        ? "var(--primary)" 
+                        : index % 3 === 1 
+                        ? "var(--secondary)" 
+                        : "var(--success)"
+                    }}
                   >
-                    <Icon className="h-8 w-8 text-white" />
+                    <Icon className="h-8 w-8" style={{ color: "var(--bg-light)" }} />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                  
+                  {/* Feature title */}
+                  <h3 className="text-2xl font-bold mb-3" style={{ color: "var(--text)" }}>
+                    {feature.title}
+                  </h3>
+                  
+                  {/* Feature description */}
+                  <p className="leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                    {feature.description}
+                  </p>
                 </CardContent>
               </Card>
             );
