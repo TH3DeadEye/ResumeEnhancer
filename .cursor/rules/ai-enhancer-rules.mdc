@@ -1,3 +1,8 @@
+---
+globs: **/*.ts, **/*.tsx, **/*.css
+alwaysApply: true
+---
+
 Before making any changes, always read: @CHANGELOG.md @project_1_ai_resume_enhancer.md
 
 After completing ALL changes in a session, you MUST update CHANGELOG.md:

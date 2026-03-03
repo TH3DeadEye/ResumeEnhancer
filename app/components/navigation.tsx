@@ -220,12 +220,16 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
           : "color-mix(in oklch, var(--bg), transparent 10%)"
       }}
     >
-      {/* Scroll Progress Bar - Enhanced visibility */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-transparent">
+      {/* Scroll Progress Bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5">
         <div
           ref={progressBarRef}
-          className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 shadow-lg"
-          style={{ width: "0%", boxShadow: "0 0 10px rgba(147, 51, 234, 0.5)" }}
+          className="h-full"
+          style={{
+            width: "0%",
+            background: "linear-gradient(to right, var(--primary), var(--secondary))",
+            boxShadow: "0 0 6px var(--primary)"
+          }}
         ></div>
       </div>
 
@@ -287,7 +291,10 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             ) : (
               <button
                 onClick={() => onNavigate("landing")}
-                className="nav-menu-item text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="nav-menu-item transition-colors"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
               >
                 Back to Home
               </button>
@@ -314,7 +321,7 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             <ThemeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="relative z-50 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
+              className="relative z-50 p-2 rounded-lg transition-colors touch-manipulation"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
               style={{ 

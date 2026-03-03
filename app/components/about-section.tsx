@@ -172,7 +172,6 @@ export function AboutSection() {
           gsap.to(card, {
             x: 8,
             scale: 1.02,
-            backgroundColor: "rgba(59, 130, 246, 0.05)",
             duration: 0.2,
             ease: "power1.out"
           });
@@ -269,16 +268,20 @@ export function AboutSection() {
                 className="w-full h-full object-cover"
               />
               {/* Gradient overlay for visual depth */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-purple-600/20"></div>
+              <div 
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(to top right, color-mix(in oklch, var(--primary), transparent 80%), color-mix(in oklch, var(--secondary), transparent 80%))" }}
+              ></div>
             </div>
             
             {/* Team Badge - Animated with pulse and bounce */}
             <div 
               ref={badgeRef}
-              className="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6"
+              className="absolute -bottom-6 -right-6 rounded-2xl shadow-xl p-6"
+              style={{ backgroundColor: "var(--bg-light)", border: "1px solid var(--border)" }}
             >
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">KMR</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Team</div>
+              <div className="text-4xl font-bold" style={{ color: "var(--primary)" }}>KMR</div>
+              <div className="text-sm" style={{ color: "var(--text-muted)" }}>Team</div>
             </div>
           </div>
 
@@ -312,14 +315,17 @@ export function AboutSection() {
               
               {/* Mission Card */}
               <div className="about-value-card flex items-start gap-4 p-4 rounded-xl transition-all cursor-pointer">
-                <div className="about-value-icon w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div
+                  className="about-value-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--primary), transparent 85%)" }}
+                >
+                  <Target className="h-6 w-6" style={{ color: "var(--primary)" }} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">
+                  <h3 className="text-xl font-semibold mb-1" style={{ color: "var(--text)" }}>
                     Our Mission
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p style={{ color: "var(--text-muted)" }}>
                     Eliminate application fatigue and help job seekers land more interviews with
                     AI-powered resume optimization.
                   </p>
@@ -328,14 +334,17 @@ export function AboutSection() {
 
               {/* Team Card */}
               <div className="about-value-card flex items-start gap-4 p-4 rounded-xl transition-all cursor-pointer">
-                <div className="about-value-icon w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div
+                  className="about-value-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--secondary), transparent 85%)" }}
+                >
+                  <Users className="h-6 w-6" style={{ color: "var(--secondary)" }} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">
+                  <h3 className="text-xl font-semibold mb-1" style={{ color: "var(--text)" }}>
                     The Team
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p style={{ color: "var(--text-muted)" }}>
                     Developed by Team KMR: Arman Milani and Ramtin Loghmani, dedicated to building
                     innovative solutions.
                   </p>
@@ -344,14 +353,17 @@ export function AboutSection() {
 
               {/* Vision Card */}
               <div className="about-value-card flex items-start gap-4 p-4 rounded-xl transition-all cursor-pointer">
-                <div className="about-value-icon w-12 h-12 bg-pink-100 dark:bg-pink-900/50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Rocket className="h-6 w-6 text-pink-600 dark:text-pink-400" />
+                <div
+                  className="about-value-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--info), transparent 85%)" }}
+                >
+                  <Rocket className="h-6 w-6" style={{ color: "var(--info)" }} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">
+                  <h3 className="text-xl font-semibold mb-1" style={{ color: "var(--text)" }}>
                     Our Vision
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p style={{ color: "var(--text-muted)" }}>
                     Create a scalable, serverless platform that evolves into an autonomous job
                     application assistant.
                   </p>
