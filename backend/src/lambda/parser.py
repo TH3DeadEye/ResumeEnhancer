@@ -141,4 +141,23 @@ def handler(event, context):
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
-        raise e
+        # Write FAILED status to DynamoDB so the frontend can surface it,
+        # then return normally — do NOT raise, or Lambda will retry 3 times
+        # burning Bedrock calls and Lambda invocations on a persistent error.
+        try:
+            user_id = data.get('user_id', 'unknown') if 'data' in dir() else 'unknown'
+            resume_id = data.get('resume_id', 'unknown') if 'data' in dir() else 'unknown'
+            table = dynamodb.Table(RESUMES_TABLE_NAME)
+            table.update_item(
+                Key={'user_id': user_id, 'resume_id': resume_id},
+                UpdateExpression='SET #status = :status, error_message = :err, updated_at = :ts',
+                ExpressionAttributeNames={'#status': 'status'},
+                ExpressionAttributeValues={
+                    ':status': 'FAILED',
+                    ':err': str(e),
+                    ':ts': datetime.utcnow().isoformat()
+                }
+            )
+        except Exception as db_err:
+            print(f"Could not write FAILED status to DynamoDB: {str(db_err)}")
+        return {"statusCode": 500, "body": f"Parsing failed: {str(e)}"}

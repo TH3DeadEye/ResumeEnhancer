@@ -16,7 +16,7 @@ Parameters:
 
   BedrockModelId:
     Type: String
-    Default: anthropic.claude-3-5-sonnet-20240620-v1:0
+    Default: us.anthropic.claude-3-5-haiku-20241022-v1:0
     Description: Bedrock model ID for AI enhancement
 
   FrontendUrl:
@@ -42,6 +42,8 @@ Resources:
   # ============================================================================
   UserPool:
     Type: AWS::Cognito::UserPool
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       UserPoolName: !Sub ${AWS::StackName}-${Environment}-UserPool
       UsernameAttributes:
@@ -149,6 +151,8 @@ Resources:
   # --- DynamoDB ---
   ResumesTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       TableName: !Sub ${AWS::StackName}-resumes
       BillingMode: PAY_PER_REQUEST
@@ -208,6 +212,8 @@ Resources:
     Properties:
       CodeUri: src/lambda
       Handler: extraction.handler
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
       Environment:
         Variables:
           # FIX: String construction
@@ -246,6 +252,8 @@ Resources:
       CodeUri: src/lambda
       Handler: parser.handler
       Timeout: 120
+      EventInvokeConfig:
+        MaximumRetryAttempts: 1
       Environment:
         Variables:
           BEDROCK_MODEL_ID: !Ref BedrockModelId
@@ -276,6 +284,12 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: bedrock:InvokeModel
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - aws-marketplace:ViewSubscriptions
+                - aws-marketplace:Subscribe
               Resource: '*'
 
   # --- Enhancement Handler ---
@@ -314,6 +328,12 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: bedrock:InvokeModel
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - aws-marketplace:ViewSubscriptions
+                - aws-marketplace:Subscribe
               Resource: '*'
 
   # --- Download Handler ---

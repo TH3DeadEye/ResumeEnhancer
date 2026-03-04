@@ -111,4 +111,19 @@ def handler(event, context):
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
-        raise e
+        # Write FAILED status — do NOT raise, or Lambda will retry 3 times
+        try:
+            table = dynamodb.Table(RESUMES_TABLE_NAME)
+            table.update_item(
+                Key={'user_id': user_id, 'resume_id': resume_id},
+                UpdateExpression='SET #status = :status, error_message = :err, updated_at = :ts',
+                ExpressionAttributeNames={'#status': 'status'},
+                ExpressionAttributeValues={
+                    ':status': 'FAILED',
+                    ':err': str(e),
+                    ':ts': timestamp
+                }
+            )
+        except Exception as db_err:
+            print(f"Could not write FAILED status to DynamoDB: {str(db_err)}")
+        return {'statusCode': 500, 'body': f'Extraction failed: {str(e)}'}
