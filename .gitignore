@@ -55,4 +55,5 @@ vite.config.ts
 
 # Markdown files (only README.md is tracked)
 *.md
-!README.md.cursor/
+!README.md
+.cursor/
