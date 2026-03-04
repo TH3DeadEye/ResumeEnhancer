@@ -1,0 +1,22 @@
+version = 0.1
+
+[default.deploy.parameters]
+resolve_s3 = true
+s3_prefix = "resume-enhancer-dev"
+region = "us-west-2"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=dev"
+image_repositories = []
+
+[default.global.parameters]
+region = "us-west-2"
+stack_name = "resume-enhancer-dev"
+
+[default.sync.parameters]
+template_file = "/Users/arman/Desktop/university/GBC/COMP2154/ResumeEnhancer/backend/template.yaml"
+dependency_layer = false
+build_in_source = true
+code = true
+watch = true
+parameter_overrides = "Environment=dev"

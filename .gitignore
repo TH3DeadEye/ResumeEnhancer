@@ -1,59 +1,259 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
+# KMR AI Resume Enhancer - Root .gitignore
 
-# testing
-/coverage
+# ==========================================
+# Operating System Files
+# ==========================================
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-/dist
-
-# misc
+# macOS
 .DS_Store
-*.pem
+.AppleDouble
+.LSOverride
+._*
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# env files (do not commit these!)
-.env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Linux
+*~
+.directory
 
-# vercel
-.vercel
+# ==========================================
+# IDE and Editor Files
+# ==========================================
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# IDE
+# VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+*.code-workspace
+
+# JetBrains IDEs
 .idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
-*~
 
-# Old Vite files
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+
+# Environment files (NEVER commit these!)
+.env
+.env.local
+.env*.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.test
+.env.test.local
+*.env
+
+# AWS credentials (double protection)
+.aws/
+aws-credentials.json
+credentials.json
+
+# API keys and secrets
+secrets/
+*.pem
+*.key
+*.cert
+
+# ==========================================
+# Frontend (Next.js) - Root Level
+# ==========================================
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Next.js build output
+/.next/
+/out/
+/build
+/dist
+
+# Testing
+/coverage
+.nyc_output/
+
+# Production
+/build
+/dist
+
+# Misc
+.turbo
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Vercel
+.vercel
+
+# ==========================================
+# Backend (Python/Lambda) Specific
+# ==========================================
+
+# Python
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+backend/env/
+backend/venv/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Distribution / packaging
+backend/dist/
+backend/build/
+backend/*.egg-info/
+backend/.eggs/
+backend/*.egg
+
+# PyInstaller
+backend/*.manifest
+backend/*.spec
+
+# Unit test / coverage
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/test-reports/
+
+# Lambda deployment packages
+backend/lambdas/**/package.zip
+backend/lambdas/**/*.zip
+backend/layers/**/*.zip
+
+# Lambda Layer dependencies
+backend/layers/python-dependencies/python/
+
+# Terraform state (if using Terraform)
+backend/infrastructure/terraform/.terraform/
+backend/infrastructure/terraform/*.tfstate
+backend/infrastructure/terraform/*.tfstate.*
+backend/infrastructure/terraform/.terraform.lock.hcl
+
+# ==========================================
+# AWS Specific
+# ==========================================
+
+# AWS SAM
+.aws-sam/
+backend/.aws-sam/
+**/.aws-sam/
+*/backend/.aws*
+
+# AWS Amplify
+amplify/
+.amplify/
+aws-exports.js
+aws-exports.ts
+amplifyconfiguration.json
+
+# CDK (if using AWS CDK)
+cdk.out/
+.cdk.staging/
+
+# ==========================================
+# Logs and Temporary Files
+# ==========================================
+
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ==========================================
+# Testing and Coverage
+# ==========================================
+
+# Test coverage
+coverage/
+*.lcov
+
+# Jest
+jest-results/
+
+# ==========================================
+# Documentation Build Output
+# ==========================================
+
+docs/_build/
+docs/.doctrees/
+
+# ==========================================
+# Project Specific
+# ==========================================
+
+# Sample/test data (if large)
+backend/tests/fixtures/large_files/
+**/backend/test/**
+
+# Local scripts for personal use
+scripts/local/
+*.local.sh
+
+# Database dumps
+*.sql
+*.db
+*.sqlite
+
+# Notes and TODO (personal)
+TODO.md
+NOTES.md
+.scratch/
+
+# Deployment artifacts
+deployment/
+deploy-*.zip
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*-backup.*
+
+# Optional: Large Files (Git LFS)
+*.psd
+*.ai
+*.sketch
+
+# Old Vite files (if migrating from Vite)
 /src
 vite.config.ts
 
-# Markdown files (only README.md is tracked)
+# Keep only README.md
 *.md
 !README.md
 .cursor/

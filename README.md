@@ -1,153 +1,200 @@
-# AI Resume Enhancer - Frontend ✨
+# KMR AI Resume Enhancer 🚀
 
-> **Note:** This is the frontend branch built with **Next.js 15**. Backend AWS integration is ready but not yet connected.
+> An AI-powered web application that helps users create ATS-optimized, tailored resumes for specific job postings using AWS serverless architecture and Claude 3.5 Sonnet.
 
-A modern, responsive Next.js frontend for the AI Resume Enhancer platform. Features server-side rendering, API routes ready for AWS integration, GSAP animations, and a custom OKLCH color scheme.
+![Project Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Team Size](https://img.shields.io/badge/team-2%20developers-blue)
 
-## 🌟 Features
+## 🎯 Project Overview
 
-- **Next.js 15 with App Router** - Modern React framework with server-side rendering
-- **API Routes Ready** - Server-side API endpoints prepared for AWS services
-- **Advanced Animations** - GSAP with parallax scrolling and micro-interactions
-- **Custom Color Scheme** - OKLCH colors with full dark mode support
-- **Type Safe** - Full TypeScript implementation
-- **Optimized Performance** - Image optimization and code splitting
+KMR AI Resume Enhancer analyzes your master resume against a job description and provides intelligent suggestions to improve your resume's ATS score and overall quality—all while ensuring every suggestion is grounded in your real experience.
 
-## 🚀 Getting Started
+### Key Features
+
+- 📄 **Master Resume Upload** - Upload your resume (PDF/DOCX) once
+- 🎯 **Job-Specific Tailoring** - Paste any job description for customized suggestions
+- 🤖 **AI-Powered Enhancement** - Claude 3.5 Sonnet suggests improvements based on your real experience
+- ✅ **Review & Accept** - Accept/reject suggestions with before/after comparison
+- 📊 **Smart Scoring** - Get ATS match score + quality score (out of 100)
+- 💾 **Version Management** - Save multiple tailored versions
+- 📥 **Professional Downloads** - Export as DOCX and PDF
+- 🎨 **Modern UI** - Beautiful GSAP animations with dark mode support
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Next.js 15** (App Router) - React framework with SSR
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first styling
+- **GSAP** - Professional animations
+- **next-themes** - Dark mode support
+
+### Backend
+- **AWS Lambda** - Serverless functions
+- **Amazon API Gateway** - REST API
+- **Amazon Cognito** - User authentication ✅ **INTEGRATED**
+- **Amazon S3** - File storage
+- **Amazon DynamoDB** - Metadata storage
+- **Amazon Bedrock** - Claude 3.5 Sonnet AI
+- **Amazon Textract** - Resume parsing
+- **LangChain** - AI orchestration
+- **PyPdf** - PDF processing
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and npm
+- Python 3.11+
+- AWS Account with CLI configured
+- Git
 
 ### Installation
 
-1. Clone the frontend branch:
-   ```bash
-   git clone -b frontend <repository-url>
-   cd "AI Enhancer"
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/TH3DeadEye/ResumeEnhancer.git
+cd "AI Enhancer"
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# Install frontend dependencies
+npm install
 
-3. Create environment file:
-   ```bash
-   cp .env.local.example .env.local
-   # Edit .env.local with your AWS credentials when ready
-   ```
+# Install backend dependencies (if working on backend)
+cd backend
+pip install -r requirements.txt
+cd ..
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your AWS credentials
+```
 
-5. Open `http://localhost:3000` in your browser
+### Running Locally
 
-## 🎨 Tech Stack
+**Frontend:**
+```bash
+npm run dev
+# Open http://localhost:3000
+```
 
-- **Next.js 15** - React framework with App Router
-- **TypeScript 5** - Type safety
-- **Tailwind CSS** - Utility-first styling
-- **GSAP** - Professional animations
-- **Shadcn/ui** - Component library
-- **next-themes** - Dark mode support
+**Backend:**
+```bash
+cd backend
+# Deploy Lambda functions to AWS
+./scripts/deploy_lambda.sh
+```
 
 ## 📁 Project Structure
 
 ```
 AI Enhancer/
-├── app/
-│   ├── api/                          # API routes (ready for AWS)
-│   │   ├── auth/                    # Cognito authentication
-│   │   │   ├── signin/route.ts     # Sign in endpoint
-│   │   │   ├── signup/route.ts     # Sign up endpoint
-│   │   │   └── verify/route.ts     # Token validation
-│   │   ├── resume/                  # Resume operations
-│   │   │   ├── upload/route.ts     # S3 presigned URL
-│   │   │   ├── enhance/route.ts    # Lambda enhancement
-│   │   │   ├── download/route.ts   # Download presigned URL
-│   │   │   └── list/route.ts       # Fetch user resumes
-│   │   └── contact/                 # Contact form
-│   ├── dashboard/                   # Protected dashboard area
-│   │   ├── layout.tsx              # Dashboard layout with nav
-│   │   ├── page.tsx                # Dashboard home
-│   │   ├── upload/                 # Upload resume page
-│   │   └── history/                # Resume history page
-│   ├── components/
-│   │   ├── protected-route.tsx     # Auth wrapper
+├── app/                          # Next.js App Router
+│   ├── api/                      # Server-side API routes
+│   │   ├── auth/                 # Cognito authentication ✅
+│   │   │   ├── signin/route.ts  # Sign in endpoint
+│   │   │   ├── signup/route.ts  # Sign up endpoint
+│   │   │   └── verify/route.ts  # Email verification
+│   │   ├── resume/               # Resume operations
+│   │   │   ├── upload/route.ts  # S3 presigned URL
+│   │   │   ├── enhance/route.ts # Lambda enhancement
+│   │   │   └── download/route.ts
+│   │   └── contact/              # Contact form
+│   ├── dashboard/                # Protected dashboard
+│   │   ├── page.tsx             # Dashboard home
+│   │   ├── upload/              # Upload resume page
+│   │   └── history/             # Resume history
+│   ├── components/               # React components
 │   │   ├── hero-section.tsx
 │   │   ├── features-section.tsx
 │   │   ├── about-section.tsx
-│   │   ├── contact-section.tsx
 │   │   ├── signin-page.tsx
-│   │   ├── navigation.tsx
-│   │   ├── theme-toggle.tsx
-│   │   └── ui/                     # Shadcn components
-│   ├── layout.tsx                   # Root layout
-│   ├── page.tsx                     # Landing page
-│   └── globals.css                  # Global styles
-├── lib/
-│   └── utils.ts                     # Utility functions
-├── public/                          # Static assets
-├── INTEGRATION_PLAN.md              # Merge & integration guide
-└── AWS_INTEGRATION_GUIDE.md         # AWS setup reference
+│   │   └── navigation.tsx
+│   ├── layout.tsx                # Root layout
+│   ├── page.tsx                  # Landing page
+│   └── globals.css               # Global styles (OKLCH colors)
+├── backend/                      # AWS Lambda functions
+│   ├── lambdas/                 # Lambda function code
+│   ├── layers/                  # Lambda layers
+│   └── tests/                   # Backend tests
+├── lib/                         # Utility functions
+├── public/                      # Static assets
+└── README.md                    # This file
 ```
 
-## 🔌 AWS Integration
+## 🔐 Environment Variables
 
-### ✅ Integrated Services
+Create `.env.local` in the root directory:
 
-**Amazon Cognito** - User authentication (WORKING)
-- Sign up with email verification
-- Sign in with session management
-- Protected routes with token checking
-- User Pool: `us-west-2_qhPzQQqYA`
+```env
+# AWS Cognito (Authentication) ✅ WORKING
+NEXT_PUBLIC_AWS_REGION=us-west-2
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-west-2_qhPzQQqYA
+NEXT_PUBLIC_COGNITO_CLIENT_ID=your-client-id
+
+# AWS S3 (File Storage)
+AWS_S3_BUCKET_UPLOADS=your-bucket-name
+AWS_S3_REGION=us-west-2
+
+# AWS Lambda (Enhancement)
+AWS_LAMBDA_ENHANCE_FUNCTION=your-function-name
+
+# AWS DynamoDB (Metadata)
+AWS_DYNAMODB_TABLE_RESUMES=ResumeMetadata
+
+# AWS Bedrock (AI)
+AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+```
+
+## 🔌 AWS Integration Status
+
+### ✅ Fully Integrated
+- **Amazon Cognito** - User authentication with email verification
+  - Sign up with password requirements
+  - Email verification with 6-digit code
+  - Sign in with session management
+  - Protected routes with token validation
 
 ### 🟡 Ready for Integration
+- **Amazon S3** - Presigned URL endpoints created
+- **AWS Lambda** - Enhancement trigger ready
+- **Amazon Bedrock** - AI integration prepared
+- **Amazon DynamoDB** - Data fetching endpoints ready
+- **Amazon Textract** - Resume parsing flow designed
 
-### Architecture Overview
-Based on your AWS infrastructure diagram:
+## 📱 Pages & Features
 
-**Authentication:**
-- Amazon Cognito → `/api/auth/signin`, `/api/auth/signup`
+### Public Pages
+- **Landing Page** (`/`) - Hero, features, about, contact with GSAP animations
+- **Sign In/Up** (`/?page=signin`) - Cognito authentication UI ✅
 
-**Resume Upload Flow:**
-1. Generate S3 presigned URL → `/api/resume/upload`
-2. Client uploads directly to S3
-3. S3 triggers Lambda (Extraction + Parser)
-4. Amazon Textract parses resume
-5. DynamoDB stores metadata
+### Protected Pages (Dashboard)
+- **Dashboard** (`/dashboard`) - User hub with resume cards and statistics ✅
+- **Upload Resume** (`/dashboard/upload`) - Drag-drop PDF upload with job description
+- **History** (`/dashboard/history`) - Resume version history (coming soon)
 
-**Resume Enhancement Flow:**
-1. Submit job description → `/api/resume/enhance`
-2. Lambda invokes Amazon Bedrock (Claude 3.5 Sonnet)
-3. AI generates enhanced resume
-4. Store in S3
+### API Routes
+All API routes are server-side Next.js endpoints:
+- `/api/auth/signin` ✅ - Cognito sign in
+- `/api/auth/signup` ✅ - Cognito registration
+- `/api/auth/verify` ✅ - Email verification
+- `/api/resume/upload` 🟡 - Generate S3 presigned URL
+- `/api/resume/enhance` 🟡 - Trigger Lambda enhancement
+- `/api/resume/download` 🟡 - Generate download URL
+- `/api/resume/list` 🟡 - Fetch user's resumes from DynamoDB
+- `/api/contact` - Contact form handler
 
-**Download Flow:**
-- Generate presigned URL → `/api/resume/download`
-
-### Integration Status
-
-🟢 **Frontend Complete** - All UI and animations done  
-🟢 **Cognito Auth** - Sign in/up working with email verification  
-🟡 **API Routes Created** - Server-side endpoints ready  
-🟡 **S3/Lambda/Bedrock** - Ready for integration  
-
-### Testing Authentication
+## 🧪 Testing Authentication
 
 ```bash
-# Start the dev server
+# Start the development server
 npm run dev
 
 # Test Sign Up
-1. Click "Sign In" button
-2. Toggle to "Sign Up"
+1. Click "Sign In" button on homepage
+2. Toggle to "Sign Up" tab
 3. Enter name, email, password (min 8 chars, uppercase, lowercase, numbers)
 4. Click "Create Account"
-5. Check email for 6-digit code
+5. Check email for 6-digit verification code
 6. Enter code and verify
 7. Sign in with verified account
 
@@ -156,49 +203,6 @@ npm run dev
 2. Click "Sign In"
 3. Redirects to /dashboard ✅
 ```
-
-### When Ready to Connect S3/Lambda
-
-1. Install AWS SDK:
-   ```bash
-   npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner @aws-sdk/client-lambda @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
-   ```
-
-2. Fill in `.env.local` with S3 and Lambda details
-
-3. Implement AWS calls in API routes
-
-4. Test resume upload and enhancement
-
-## 📱 Pages
-
-### Public Pages
-- **Landing Page** (`/`) - Hero, features, about, contact sections with GSAP animations
-- **Sign In/Up** (`/?page=signin`) - Authentication UI (calls `/api/auth/*`)
-
-### Protected Pages (Dashboard)
-- **Dashboard** (`/dashboard`) - User hub with resume cards, statistics, and quick actions
-- **Upload Resume** (`/dashboard/upload`) - Drag-drop PDF upload with job description input
-- **History** (`/dashboard/history`) - Resume history (placeholder - coming soon)
-
-### API Routes
-- `/api/auth/signin` - Cognito authentication (sign in)
-- `/api/auth/signup` - Cognito user registration
-- `/api/auth/verify` - Token validation
-- `/api/resume/upload` - Generate S3 presigned URL
-- `/api/resume/enhance` - Trigger Lambda enhancement
-- `/api/resume/download` - Generate download presigned URL
-- `/api/resume/list` - Fetch user's resumes from DynamoDB
-- `/api/contact` - Contact form handler
-
-## 👥 Team
-
-**Team KMR**
-- Arman Milani  
-- Ramtin Loghmani
-
-**COMP 2154 - System Development Project**  
-George Brown College
 
 ## 📝 Available Scripts
 
@@ -209,31 +213,55 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
+## 👥 Team
+
+**Team KMR**
+- **Ramtin Loghmani** - Frontend Lead (Next.js, UI/UX, GSAP animations)
+- **Arman Milani** - Backend Lead (AWS, Lambda, AI Integration)
+
+**COMP 2154 - System Development Project**  
+George Brown College
+
 ## 🎯 Current Status
 
 ### ✅ Completed
 - [x] Landing page with GSAP animations
-- [x] Sign In/Sign Up UI
+- [x] Sign In/Sign Up UI with validation
 - [x] Mobile responsive design
-- [x] Dark mode support
+- [x] Dark mode support (custom OKLCH colors)
 - [x] Dashboard page with statistics
-- [x] Upload resume page (drag-drop)
+- [x] Upload resume page (drag-drop UI)
 - [x] Protected routes structure
-- [x] API route stubs
+- [x] **Amazon Cognito authentication working** ✅
+- [x] Email verification flow ✅
+- [x] Session management ✅
 
 ### ⏳ In Progress
-- [ ] AWS Cognito integration
 - [ ] S3 upload with presigned URLs
 - [ ] Lambda enhancement trigger
 - [ ] DynamoDB data fetching
-- [ ] End-to-end testing
+- [ ] Bedrock AI integration
+- [ ] Resume parsing with Textract
 
 ### 📅 Coming Soon
-- [ ] Email verification flow
-- [ ] Password reset
+- [ ] Password reset functionality
 - [ ] Resume history with filters
 - [ ] Analytics dashboard
-- [ ] Production deployment
+- [ ] Version comparison UI
+- [ ] Production deployment (Vercel + AWS)
+
+## 📦 Deployment
+
+### Frontend (Vercel)
+```bash
+vercel deploy
+```
+
+### Backend (AWS Lambda)
+```bash
+cd backend
+./scripts/deploy_lambda.sh
+```
 
 ## 📄 License
 
@@ -241,6 +269,6 @@ This project is part of an academic course at George Brown College.
 
 ---
 
-**Status:** ✅ UI Complete | 🟡 API Ready | 🔴 AWS Integration Pending  
+**Status:** ✅ Frontend Complete | ✅ Cognito Auth Working | 🟡 Full AWS Integration In Progress  
 **Framework:** Next.js 15 with App Router  
 Built with ❤️ by Team KMR
