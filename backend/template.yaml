@@ -362,6 +362,23 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Ref ResumesTable
 
+  # --- List Resumes Handler ---
+  ListHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/lambda
+      Handler: list.handler
+      Events:
+        ApiGETresumelist:
+          Type: Api
+          Properties:
+            Path: /resume/list
+            Method: GET
+            RestApiId: !Ref Api
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResumesTable
+
 Metadata:
   AWS::Composer::Groups:
     Group:
@@ -375,3 +392,4 @@ Metadata:
         - EnhancementHandler
         - GeneratedBucket
         - DownloadHandler
+        - ListHandler
