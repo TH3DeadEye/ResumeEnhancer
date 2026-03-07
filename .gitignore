@@ -78,16 +78,20 @@ secrets/
 # ==========================================
 
 # Dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
 
 # Next.js build output
-/.next/
-/out/
-/build
-/dist
+.next/
+out/
+build/
+dist/
+node_modules/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
 
 # Testing
 /coverage
