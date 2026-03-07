@@ -203,7 +203,7 @@ export default function HistoryPage() {
           {filteredResumes.map((resume, index) => (
             <Card 
               key={resume.id}
-              className="group border-2 overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-xl"
+              className="group border-2 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
               style={{ 
                 backgroundColor: "var(--bg-light)",
                 borderColor: "var(--border)",

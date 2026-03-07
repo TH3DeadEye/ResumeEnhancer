@@ -275,7 +275,7 @@ export default function DashboardPage() {
               {resumes.map((resume) => (
                 <div
                   key={resume.id}
-                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border-2"
+                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-2"
                   style={{ 
                     backgroundColor: "var(--bg)",
                     borderColor: "var(--border)"

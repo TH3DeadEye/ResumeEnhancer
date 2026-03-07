@@ -39,13 +39,16 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute>
       <div className="min-h-screen" style={{ backgroundColor: "var(--bg)" }}>
-        {/* Top Navigation Bar */}
-        <header className="sticky top-0 z-50 w-full backdrop-blur-md shadow-lg"
-          style={{ 
+        {/* Top Navigation Bar — fixed so it stays above all scrolling content */}
+        <header
+          className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md shadow-lg"
+          style={{
             backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 5%)",
             borderBottom: "1px solid var(--border)"
-          }}>
-          <div className="container flex h-16 items-center justify-between">
+          }}
+        >
+          {/* Match the landing nav's container: max-w-7xl + responsive horizontal padding */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
               <div 
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -118,12 +121,12 @@ export default function DashboardLayout({
           </div>
         </nav>
 
-        {/* Desktop Sidebar */}
+        {/* Desktop Sidebar — fixed, starts below the fixed header (pt-16 = h-16) */}
         <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col md:pt-16">
-          <div className="flex flex-col h-full" style={{ 
+          <div className="flex flex-col h-full" style={{
             backgroundColor: "color-mix(in oklch, var(--bg-light), var(--border) 15%)",
             borderRight: "2px solid var(--border)",
-            boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)"
+            boxShadow: "2px 0 8px var(--border)"
           }}>
             {/* Main navigation */}
             <div className="flex flex-col gap-2 p-4 flex-1">
@@ -172,9 +175,13 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* Main Content */}
-        <main className="md:pl-64 pb-16 md:pb-0 pt-4">
-          <div className="container py-6">
+        {/* Main Content
+             pt-16   = clears the fixed header (h-16)
+             overflow-x-hidden = prevents horizontal bleed from hover:scale on full-width items
+        */}
+        <main className="md:pl-64 pb-16 md:pb-0 pt-16 overflow-x-hidden">
+          {/* Same width/padding system as the landing nav for visual consistency */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>
         </main>

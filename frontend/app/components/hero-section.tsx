@@ -242,7 +242,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
     <section
       id="home"
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
       style={{ 
         background: "linear-gradient(to bottom right, var(--bg), var(--bg-light), var(--bg))"
       }}
@@ -276,7 +276,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
       {/* ============================================================ */}
       {/* MAIN CONTENT */}
       {/* ============================================================ */}
-      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
         
         {/* AWS Bedrock Badge - Floating animation */}
         <div 

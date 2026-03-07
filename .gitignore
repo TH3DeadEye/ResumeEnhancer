@@ -256,3 +256,4 @@ vite.config.ts
 # Keep only README.md
 *.md
 !README.md
+.cursor/

@@ -138,11 +138,10 @@ export function ContactSection() {
       // ──────────────────────────────────────────────────────────
       const inputs = formRef.current?.querySelectorAll("input, textarea");
       inputs?.forEach((input) => {
-        // Focus - Glow and scale
+        // Focus - Subtle scale only; colour glow handled by CSS focus-visible
         input.addEventListener("focus", () => {
           gsap.to(input, {
             scale: 1.02,
-            boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
             duration: 0.3,
             ease: "power2.out"
           });
@@ -434,8 +433,12 @@ export function ContactSection() {
               <Button
                 type="submit"
                 size="lg"
-                className="submit-button w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white touch-manipulation"
-                style={{ minHeight: "48px" }}
+                className="submit-button w-full touch-manipulation"
+                style={{
+                  background: "linear-gradient(to right, var(--primary), var(--secondary))",
+                  color: "var(--bg-light)",
+                  minHeight: "48px"
+                }}
               >
                 Send Message <Send className="ml-2 h-5 w-5" />
               </Button>
