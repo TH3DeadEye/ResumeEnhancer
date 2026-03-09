@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
-import { Eye, EyeOff, Sparkles, Check, X, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
+import gsap from 'gsap';
 import {
   handleSignIn,
   handleSignUp,
@@ -17,7 +17,8 @@ import {
   handleConfirmResetPassword,
 } from '@/lib/auth-service';
 
-// Password requirements checked in real time
+// ── Password requirements ─────────────────────────────────────────────────────
+
 const PASSWORD_RULES = [
   { label: 'At least 8 characters',  test: (p: string) => p.length >= 8 },
   { label: 'Uppercase letter',        test: (p: string) => /[A-Z]/.test(p) },
@@ -34,8 +35,8 @@ function PasswordRuleRow({ label, met }: { label: string; met: boolean }) {
         style={{ backgroundColor: met ? 'var(--success)' : 'var(--danger)' }}
       >
         {met
-          ? <Check className="w-2 h-2" style={{ color: 'var(--bg-light)' }} />
-          : <X     className="w-2 h-2" style={{ color: 'var(--bg-light)' }} />
+          ? <Check className="w-2 h-2" style={{ color: 'var(--bg-surface)' }} />
+          : <X     className="w-2 h-2" style={{ color: 'var(--bg-surface)' }} />
         }
       </div>
       <span style={{ color: met ? 'var(--success)' : 'var(--danger)' }}>{label}</span>
@@ -43,19 +44,60 @@ function PasswordRuleRow({ label, met }: { label: string; met: boolean }) {
   );
 }
 
+// ── Shared layout & style constants ──────────────────────────────────────────
+
+const outerStyle: React.CSSProperties = {
+  minHeight: '100vh',
+  backgroundColor: 'var(--bg-subtle)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  paddingTop: '10vh',
+  paddingBottom: '4rem',
+  paddingLeft: '1rem',
+  paddingRight: '1rem',
+};
+
+const cardStyle: React.CSSProperties = {
+  backgroundColor: 'var(--bg-surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-xl)',
+  padding: '40px',
+  boxShadow: 'var(--shadow-lg)',
+  width: '100%',
+};
+
+const buttonStyle: React.CSSProperties = {
+  backgroundColor: 'var(--accent)',
+  color: 'white',
+  width: '100%',
+  minHeight: '48px',
+  borderRadius: 'var(--radius-md)',
+  fontWeight: 500,
+  fontSize: '0.9375rem',
+  cursor: 'pointer',
+  transition: 'background-color 0.15s',
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export function SignInPage() {
   const router = useRouter();
 
+  // ── Refs for GSAP animation ────────────────────────────────────────────────
+
+  const mainContainerRef   = useRef<HTMLDivElement>(null);
+  const forgotContainerRef = useRef<HTMLDivElement>(null);
+
   // ── Page-level flow state ──────────────────────────────────────────────────
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
 
-  // Sign-in inline error (Bug 10)
-  const [signInError, setSignInError] = useState<string | null>(null);
+  const [isSignUp,           setIsSignUp          ] = useState(false);
+  const [isLoading,          setIsLoading         ] = useState(false);
+  const [needsVerification,  setNeedsVerification ] = useState(false);
+  const [verificationCode,   setVerificationCode  ] = useState('');
+  const [signInError,        setSignInError       ] = useState<string | null>(null);
 
-  // Forgot-password flow state (Bug 8)
+  // Forgot-password flow state
   const [forgotPw, setForgotPw] = useState({
     active: false,
     codeSent: false,
@@ -65,7 +107,7 @@ export function SignInPage() {
   });
 
   // Password visibility
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword,    setShowPassword   ] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   // Main form data
@@ -76,24 +118,46 @@ export function SignInPage() {
     rememberMe: false,
   });
 
-  // ── Derived: password strength rules (Bug 9) ──────────────────────────────
+  // ── Derived: password strength rules ──────────────────────────────────────
+
   const passwordStrength = PASSWORD_RULES.map(rule => ({
     label: rule.label,
     met: rule.test(formData.password),
   }));
 
+  // ── GSAP: animate main card on mount ─────────────────────────────────────
+
+  useEffect(() => {
+    if (mainContainerRef.current) {
+      gsap.fromTo(
+        mainContainerRef.current,
+        { opacity: 0, y: 32, filter: 'blur(8px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out' }
+      );
+    }
+  }, []);
+
+  // ── GSAP: animate forgot-password card when it appears ────────────────────
+
+  useEffect(() => {
+    if (forgotPw.active && forgotContainerRef.current) {
+      gsap.fromTo(
+        forgotContainerRef.current,
+        { opacity: 0, y: 32, filter: 'blur(8px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out' }
+      );
+    }
+  }, [forgotPw.active]);
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    // Clear inline error as soon as user edits any field
     if (signInError) setSignInError(null);
     setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
-  /** Forgot-password form submission */
-  const handleForgotPwSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleForgotPwSubmit = async () => {
     setIsLoading(true);
     try {
       if (!forgotPw.codeSent) {
@@ -118,16 +182,14 @@ export function SignInPage() {
           toast.error(result.error || 'Password reset failed');
         }
       }
-    } catch (err: any) {
-      toast.error(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
-  /** Main auth form submission */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsLoading(true);
     setSignInError(null);
 
@@ -184,62 +246,59 @@ export function SignInPage() {
             toast.error(result.error);
             setTimeout(() => setIsSignUp(true), 2000);
           } else {
-            // Show error inline, not just in a toast (Bug 10)
             setSignInError(result.error || 'Incorrect email or password. Please try again.');
           }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!isSignUp && !needsVerification) {
-        setSignInError(err.message || 'Authentication failed');
+        setSignInError(err instanceof Error ? err.message : 'Authentication failed');
       } else {
-        toast.error(err.message || 'Authentication failed');
+        toast.error(err instanceof Error ? err.message : 'Authentication failed');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ── Shared styles ──────────────────────────────────────────────────────────
-
-  const pageWrapperStyle = {
-    background: 'linear-gradient(to bottom right, var(--bg), var(--bg-light), var(--bg))',
-  };
-
-  const gradientButtonStyle = {
-    background: 'linear-gradient(to right, var(--primary), var(--secondary))',
-    color: 'var(--bg-light)',
-    minHeight: '48px',
-  };
-
   // ── Forgot-password screen ─────────────────────────────────────────────────
 
   if (forgotPw.active) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8"
-        style={pageWrapperStyle}
-      >
-        <div className="max-w-md w-full">
-          <div
-            className="rounded-2xl shadow-2xl p-8"
-            style={{ backgroundColor: 'var(--bg-light)' }}
-          >
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>
+      <div style={outerStyle}>
+        <div ref={forgotContainerRef} style={{ maxWidth: '440px', width: '100%' }}>
+          {/* Wordmark */}
+          <div className="text-center" style={{ marginBottom: '32px' }}>
+            <span style={{ fontWeight: 600, fontSize: '1.375rem', color: 'var(--accent)' }}>
+              Resumence
+            </span>
+          </div>
+
+          {/* Card */}
+          <div style={cardStyle}>
+            <div className="text-center" style={{ marginBottom: '28px' }}>
+              <h2
+                style={{ fontWeight: 500, fontSize: '1.375rem', color: 'var(--text-primary)', marginBottom: '6px' }}
+              >
                 {forgotPw.codeSent ? 'Set New Password' : 'Reset Password'}
               </h2>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                 {forgotPw.codeSent
                   ? 'Enter the reset code and your new password'
                   : "Enter your email and we'll send you a reset code"}
               </p>
             </div>
 
-            <form onSubmit={handleForgotPwSubmit} className="space-y-5">
+            <div
+              className="flex flex-col"
+              style={{ gap: '20px' }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isLoading) handleForgotPwSubmit(); }}
+            >
               {!forgotPw.codeSent ? (
                 <div>
-                  <Label htmlFor="forgot-email" style={{ color: 'var(--text)' }}>Email Address</Label>
+                  <Label htmlFor="forgot-email" style={{ color: 'var(--text-primary)' }}>
+                    Email Address
+                  </Label>
                   <Input
                     id="forgot-email"
                     type="email"
@@ -248,12 +307,15 @@ export function SignInPage() {
                     required
                     placeholder="Enter your email"
                     className="mt-1"
+                    style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
                   />
                 </div>
               ) : (
                 <>
                   <div>
-                    <Label htmlFor="reset-code" style={{ color: 'var(--text)' }}>Reset Code</Label>
+                    <Label htmlFor="reset-code" style={{ color: 'var(--text-primary)' }}>
+                      Reset Code
+                    </Label>
                     <Input
                       id="reset-code"
                       type="text"
@@ -263,10 +325,13 @@ export function SignInPage() {
                       placeholder="6-digit code from email"
                       maxLength={6}
                       className="mt-1 text-center text-xl tracking-widest"
+                      style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="new-password" style={{ color: 'var(--text)' }}>New Password</Label>
+                    <Label htmlFor="new-password" style={{ color: 'var(--text-primary)' }}>
+                      New Password
+                    </Label>
                     <div className="relative mt-1">
                       <Input
                         id="new-password"
@@ -276,6 +341,7 @@ export function SignInPage() {
                         required
                         placeholder="Enter new password"
                         className="pr-10"
+                        style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
                       />
                       <button
                         type="button"
@@ -283,7 +349,10 @@ export function SignInPage() {
                         className="absolute right-3 top-1/2 -translate-y-1/2"
                         style={{ color: 'var(--text-muted)' }}
                       >
-                        {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        {showNewPassword
+                          ? <EyeOff className="h-5 w-5" />
+                          : <Eye    className="h-5 w-5" />
+                        }
                       </button>
                     </div>
                     {forgotPw.newPassword && (
@@ -301,19 +370,20 @@ export function SignInPage() {
                 </>
               )}
 
-              <Button
-                type="submit"
-                size="lg"
+              <button
+                type="button"
+                onClick={handleForgotPwSubmit}
                 disabled={isLoading}
-                className="w-full touch-manipulation"
-                style={gradientButtonStyle}
+                style={{ ...buttonStyle, opacity: isLoading ? 0.7 : 1 }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
               >
                 {isLoading
                   ? 'Please wait...'
                   : forgotPw.codeSent
                   ? 'Reset Password'
                   : 'Send Reset Code'}
-              </Button>
+              </button>
 
               <div className="text-center">
                 <button
@@ -322,13 +392,17 @@ export function SignInPage() {
                     setForgotPw({ active: false, codeSent: false, email: '', code: '', newPassword: '' })
                   }
                   className="text-sm"
-                  style={{ color: 'var(--primary)' }}
+                  style={{ color: 'var(--accent-text)' }}
                 >
                   Back to Sign In
                 </button>
               </div>
-            </form>
+            </div>
           </div>
+
+          <p className="text-xs text-center mt-6" style={{ color: 'var(--text-disabled)' }}>
+            By continuing you agree to our Terms &amp; Privacy Policy.
+          </p>
         </div>
         <Toaster />
       </div>
@@ -338,322 +412,268 @@ export function SignInPage() {
   // ── Main sign-in / sign-up screen ─────────────────────────────────────────
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8"
-      style={pageWrapperStyle}
-    >
-      <div className="max-w-6xl w-full">
-        <div
-          className="rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden"
-          style={{ backgroundColor: 'var(--bg-light)' }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2">
+    <div style={outerStyle}>
+      <div ref={mainContainerRef} style={{ maxWidth: '440px', width: '100%' }}>
 
-            {/* ── Left panel: branding — hidden on mobile so card fits viewport (Bug 7) ── */}
-            <div
-              className="hidden lg:flex relative p-12 flex-col justify-center items-center"
+        {/* Wordmark */}
+        <div className="text-center" style={{ marginBottom: '32px' }}>
+          <span style={{ fontWeight: 600, fontSize: '1.375rem', color: 'var(--accent)' }}>
+            Resumence
+          </span>
+        </div>
+
+        {/* Card */}
+        <div style={cardStyle}>
+
+          {/* Header */}
+          <div className="text-center" style={{ marginBottom: '28px' }}>
+            <h2
               style={{
-                background: 'linear-gradient(to bottom right, var(--primary), var(--secondary))',
-                color: 'var(--bg-light)',
+                fontWeight: 500,
+                fontSize: '1.375rem',
+                color: 'var(--text-primary)',
+                marginBottom: '6px',
               }}
             >
-              <div className="absolute inset-0 opacity-10">
-                <img
-                  src="https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlJTIwdGVjaG5vbG9neXxlbnwxfHx8fDE3NzAwNjM4MDl8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="AI Technology"
-                  className="w-full h-full object-cover"
+              {needsVerification ? 'Verify Email' : isSignUp ? 'Create account' : 'Welcome back'}
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              {needsVerification
+                ? 'Enter the code sent to your email'
+                : isSignUp
+                ? 'Sign up to start tailoring resumes'
+                : 'Sign in to your account'}
+            </p>
+          </div>
+
+          {/* Form */}
+          <div
+            className="flex flex-col"
+            style={{ gap: '20px' }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !isLoading) handleSubmit(); }}
+          >
+
+            {needsVerification ? (
+              /* ── Email verification step ── */
+              <div>
+                <Label htmlFor="code" style={{ color: 'var(--text-primary)' }}>
+                  Verification Code
+                </Label>
+                <Input
+                  id="code"
+                  name="code"
+                  type="text"
+                  value={verificationCode}
+                  onChange={e => setVerificationCode(e.target.value)}
+                  required
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  className="mt-1 text-center text-2xl tracking-widest"
+                  style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
                 />
-              </div>
-
-              <div className="relative z-10 text-center">
-                <div
-                  className="w-20 h-20 backdrop-blur-sm rounded-3xl flex items-center justify-center mb-8 mx-auto"
-                  style={{ backgroundColor: 'color-mix(in oklch, var(--bg-light), transparent 80%)' }}
-                >
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{ backgroundColor: 'var(--bg-light)' }}
-                  >
-                    <span
-                      className="text-4xl font-bold"
-                      style={{
-                        background: 'linear-gradient(to bottom right, var(--primary), var(--secondary))',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}
-                    >AI</span>
-                  </div>
-                </div>
-
-                <h1 className="text-4xl font-bold mb-4">AI Resume Enhancer</h1>
-                <p
-                  className="text-xl mb-8"
-                  style={{ color: 'color-mix(in oklch, var(--bg-light), transparent 20%)' }}
-                >
-                  Transform your resume with AI
+                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                  Check your email for the verification code
                 </p>
-
-                <div className="space-y-4 text-left max-w-sm mx-auto">
-                  {['AI-Powered Tailoring', 'ATS Optimization', '100% Secure & Private'].map(text => (
-                    <div
-                      key={text}
-                      className="flex items-center gap-3 p-3 rounded-lg"
-                      style={{ backgroundColor: 'color-mix(in oklch, var(--bg-light), transparent 90%)' }}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'color-mix(in oklch, var(--bg-light), transparent 80%)' }}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                      </div>
-                      <span
-                        className="text-sm"
-                        style={{ color: 'color-mix(in oklch, var(--bg-light), transparent 15%)' }}
-                      >
-                        {text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Name — sign-up only */}
+                {isSignUp && (
+                  <div>
+                    <Label htmlFor="name" style={{ color: 'var(--text-primary)' }}>
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required={isSignUp}
+                      placeholder="Enter your full name"
+                      className="mt-1"
+                      style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
+                    />
+                  </div>
+                )}
 
-            {/* ── Right panel: form ── */}
-            <div
-              className="p-6 sm:p-10 flex items-center"
-              style={{ backgroundColor: 'var(--bg-light)' }}
-            >
-              <div className="max-w-md mx-auto w-full">
-
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'var(--text)' }}>
-                    {needsVerification ? 'Verify Email' : isSignUp ? 'Create Account' : 'Welcome Back'}
-                  </h2>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    {needsVerification
-                      ? 'Enter the code sent to your email'
-                      : isSignUp
-                      ? 'Sign up to start optimizing resumes'
-                      : 'Sign in to continue'}
-                  </p>
+                {/* Email */}
+                <div>
+                  <Label htmlFor="email" style={{ color: 'var(--text-primary)' }}>
+                    Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter your email"
+                    className="mt-1"
+                    style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
+                  />
                 </div>
 
-                {/* Form — no hard-coded minHeight so page never forces a scrollbar (Bug 7) */}
-                <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Password + forgot + strength */}
+                <div>
+                  <Label htmlFor="password" style={{ color: 'var(--text-primary)' }}>
+                    Password
+                  </Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      placeholder="Enter your password"
+                      className="pr-10"
+                      style={{ backgroundColor: 'var(--bg-sunken)', borderColor: 'var(--border)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {showPassword
+                        ? <EyeOff className="h-5 w-5" />
+                        : <Eye    className="h-5 w-5" />
+                      }
+                    </button>
+                  </div>
 
-                  {needsVerification ? (
-                    /* ── Email verification step ── */
-                    <div>
-                      <Label htmlFor="code" style={{ color: 'var(--text)' }}>Verification Code</Label>
-                      <Input
-                        id="code"
-                        name="code"
-                        type="text"
-                        value={verificationCode}
-                        onChange={e => setVerificationCode(e.target.value)}
-                        required
-                        placeholder="Enter 6-digit code"
-                        maxLength={6}
-                        className="mt-1 text-center text-2xl tracking-widest"
-                      />
-                      <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                        Check your email for the verification code
-                      </p>
+                  {/* Forgot password — sign-in only */}
+                  {!isSignUp && (
+                    <div className="mt-1.5 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForgotPw(prev => ({ ...prev, active: true, email: formData.email }))
+                        }
+                        className="text-xs"
+                        style={{ color: 'var(--accent-text)' }}
+                      >
+                        Forgot password?
+                      </button>
                     </div>
+                  )}
+
+                  {/* Live password strength — sign-up only */}
+                  {isSignUp && formData.password && (
+                    <div className="mt-2 space-y-1">
+                      {passwordStrength.map(({ label, met }) => (
+                        <PasswordRuleRow key={label} label={label} met={met} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Remember me — sign-in only */}
+                {!isSignUp && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={formData.rememberMe}
+                      onCheckedChange={checked =>
+                        setFormData({ ...formData, rememberMe: checked as boolean })
+                      }
+                    />
+                    <Label
+                      htmlFor="rememberMe"
+                      className="text-sm cursor-pointer"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Remember me
+                    </Label>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Inline error */}
+            {signInError && (
+              <div
+                className="flex items-center gap-2 p-3 rounded-lg text-sm"
+                style={{
+                  backgroundColor: 'color-mix(in oklch, var(--danger), transparent 90%)',
+                  color: 'var(--danger)',
+                  border: '1px solid color-mix(in oklch, var(--danger), transparent 60%)',
+                }}
+              >
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{signInError}</span>
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              style={{ ...buttonStyle, opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+              onMouseEnter={e => { if (!isLoading) e.currentTarget.style.backgroundColor = 'var(--accent-hover)'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
+            >
+              {isLoading
+                ? 'Please wait...'
+                : needsVerification
+                ? 'Verify Email'
+                : isSignUp
+                ? 'Create Account'
+                : 'Sign In'}
+            </button>
+
+            {/* Toggle sign-in / sign-up */}
+            {!needsVerification && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setSignInError(null);
+                    setFormData({ name: '', email: '', password: '', rememberMe: false });
+                  }}
+                  className="text-sm"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {isSignUp ? (
+                    <>Already have an account?{' '}
+                      <span style={{ color: 'var(--accent-text)', fontWeight: 500 }}>Sign In</span>
+                    </>
                   ) : (
-                    <>
-                      {/* Name field — sign up only */}
-                      {isSignUp && (
-                        <div>
-                          <Label htmlFor="name" style={{ color: 'var(--text)' }}>Full Name</Label>
-                          <Input
-                            id="name"
-                            name="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required={isSignUp}
-                            placeholder="Enter your full name"
-                            className="mt-1"
-                          />
-                        </div>
-                      )}
-
-                      {/* Email */}
-                      <div>
-                        <Label htmlFor="email" style={{ color: 'var(--text)' }}>Email Address</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={handleChange}
-                          required
-                          placeholder="Enter your email"
-                          className="mt-1"
-                        />
-                      </div>
-
-                      {/* Password + forgot link + strength checker */}
-                      <div>
-                        <Label htmlFor="password" style={{ color: 'var(--text)' }}>Password</Label>
-                        <div className="relative mt-1">
-                          <Input
-                            id="password"
-                            name="password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                            placeholder="Enter your password"
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2"
-                            style={{ color: 'var(--text-muted)' }}
-                          >
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                          </button>
-                        </div>
-
-                        {/* Forgot password — sign-in only, placed right below the field (Bug 8) */}
-                        {!isSignUp && (
-                          <div className="mt-1.5 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setForgotPw(prev => ({ ...prev, active: true, email: formData.email }))
-                              }
-                              className="text-xs"
-                              style={{ color: 'var(--primary)' }}
-                            >
-                              Forgot password?
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Live password strength — sign-up only, appears when typing (Bug 9) */}
-                        {isSignUp && formData.password && (
-                          <div className="mt-2 space-y-1">
-                            {passwordStrength.map(({ label, met }) => (
-                              <PasswordRuleRow key={label} label={label} met={met} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Remember me — sign-in only */}
-                      {!isSignUp && (
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="rememberMe"
-                            checked={formData.rememberMe}
-                            onCheckedChange={checked =>
-                              setFormData({ ...formData, rememberMe: checked as boolean })
-                            }
-                          />
-                          <Label
-                            htmlFor="rememberMe"
-                            className="text-sm cursor-pointer"
-                            style={{ color: 'var(--text-muted)' }}
-                          >
-                            Remember me
-                          </Label>
-                        </div>
-                      )}
+                    <>Don&apos;t have an account?{' '}
+                      <span style={{ color: 'var(--accent-text)', fontWeight: 500 }}>Sign Up</span>
                     </>
                   )}
-
-                  {/* Inline error for wrong credentials — dynamic, never always-visible (Bug 10) */}
-                  {signInError && (
-                    <div
-                      className="flex items-center gap-2 p-3 rounded-lg text-sm"
-                      style={{
-                        backgroundColor: 'color-mix(in oklch, var(--danger), transparent 90%)',
-                        color: 'var(--danger)',
-                        border: '1px solid color-mix(in oklch, var(--danger), transparent 60%)',
-                      }}
-                    >
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      <span>{signInError}</span>
-                    </div>
-                  )}
-
-                  {/* Submit */}
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={isLoading}
-                    className="w-full touch-manipulation"
-                    style={gradientButtonStyle}
-                  >
-                    {isLoading
-                      ? 'Please wait...'
-                      : needsVerification
-                      ? 'Verify Email'
-                      : isSignUp
-                      ? 'Create Account'
-                      : 'Sign In'}
-                  </Button>
-
-                  {/* Toggle sign-in / sign-up */}
-                  {!needsVerification && (
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsSignUp(!isSignUp);
-                          setSignInError(null);
-                          setFormData({ name: '', email: '', password: '', rememberMe: false });
-                        }}
-                        className="text-sm"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {isSignUp ? (
-                          <>Already have an account?{' '}
-                            <span className="font-semibold" style={{ color: 'var(--primary)' }}>Sign In</span>
-                          </>
-                        ) : (
-                          <>Don&apos;t have an account?{' '}
-                            <span className="font-semibold" style={{ color: 'var(--primary)' }}>Sign Up</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-
-                  {needsVerification && (
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNeedsVerification(false);
-                          setIsSignUp(false);
-                        }}
-                        className="text-sm"
-                        style={{ color: 'var(--primary)' }}
-                      >
-                        Back to Sign In
-                      </button>
-                    </div>
-                  )}
-                </form>
-
-                {/* Footer */}
-                <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
-                  <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                    By continuing, you agree to our Terms & Privacy Policy.
-                    <br />
-                    Powered by AWS Cognito
-                  </p>
-                </div>
+                </button>
               </div>
-            </div>
+            )}
+
+            {needsVerification && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNeedsVerification(false);
+                    setIsSignUp(false);
+                  }}
+                  className="text-sm"
+                  style={{ color: 'var(--accent-text)' }}
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Below card */}
+        <p className="text-xs text-center mt-6" style={{ color: 'var(--text-disabled)' }}>
+          By continuing you agree to our Terms &amp; Privacy Policy.
+        </p>
       </div>
 
       <Toaster />

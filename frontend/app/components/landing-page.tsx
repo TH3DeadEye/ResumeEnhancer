@@ -53,10 +53,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       <FeaturesSection />
       
       {/* ============================================================ */}
-      {/* ABOUT SECTION - "About Our Project" */}
-      {/* - Split layout: image left, content right */}
-      {/* - Team information (KMR: Arman & Ramtin) */}
-      {/* - Mission, Team, Vision cards */}
+      {/* ABOUT SECTION */}
+      {/* - 40/60 split: sticky left column + stacked cards right */}
+      {/* - "Built differently, on purpose." */}
       {/* ============================================================ */}
       <AboutSection />
       

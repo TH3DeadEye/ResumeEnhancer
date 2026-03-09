@@ -1,197 +1,114 @@
 'use client';
 
-import { Github, Linkedin, Mail } from "lucide-react";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-/**
- * LANDING FOOTER COMPONENT
- * 
- * Footer with:
- * - Company branding and description
- * - Social media links
- * - Navigation links (Product and Legal sections)
- * - Copyright information
- * - Tech stack mention
- * 
- * CUSTOMIZATION:
- * - Update social media URLs in the <a> tags
- * - Add/remove navigation links in the Product/Legal sections
- * - Modify copyright year and team name
- */
+gsap.registerPlugin(ScrollTrigger);
+
+const NAV_LINKS = [
+  { label: "Features", href: "#features" },
+  { label: "About",    href: "#about"    },
+  { label: "Contact",  href: "#contact"  },
+  { label: "Sign In",  href: "#signin"   },
+];
 
 export function LandingFooter() {
+  const footerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        ".footer-animate",
+        { opacity: 0, y: 32, filter: "blur(8px)" },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.7,
+          ease: "power3.out",
+          stagger: 0.12,
+          scrollTrigger: {
+            trigger: footerRef.current,
+            start: "top 82%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+    }, footerRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <footer
-      className="py-12"
-      style={{ backgroundColor: "var(--bg-dark)", color: "var(--text-muted)" }}
+      ref={footerRef}
+      style={{
+        backgroundColor: "var(--bg-base)",
+        borderTop: "1px solid var(--border)",
+        padding: "48px max(24px, 10%)",
+      }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* ============================================================ */}
-        {/* MAIN FOOTER CONTENT - 4 Column Grid */}
-        {/* ============================================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* COLUMN 1-2: Brand and Social Media (spans 2 columns) */}
-          {/* ──────────────────────────────────────────────────────── */}
-          <div className="md:col-span-2">
-            {/* Logo */}
-            <div className="flex items-center gap-2 mb-4">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(to bottom right, var(--primary), var(--secondary))" }}
-              >
-                <span className="font-bold text-lg" style={{ color: "var(--bg-light)" }}>AI</span>
-              </div>
-              <span className="text-xl font-bold" style={{ color: "var(--text)" }}>Resume Enhancer</span>
-            </div>
-            
-            {/* Company Description */}
-            <p className="max-w-md mb-4" style={{ color: "var(--text-muted)" }}>
-              Revolutionizing the job application process with AI-powered resume optimization.
-              Built on AWS serverless architecture for students and professionals.
-            </p>
-            
-            {/* Social Media Links */}
-            <div className="flex gap-4">
-              {/* GitHub - UPDATE href with your GitHub URL */}
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-              >
-                <Github className="h-5 w-5" />
-              </a>
-              
-              {/* LinkedIn - UPDATE href with your LinkedIn URL */}
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-              >
-                <Linkedin className="h-5 w-5" />
-              </a>
-              
-              {/* Email - UPDATE href with your support email */}
-              <a
-                href="mailto:support@airesume.com"
-                className="transition-colors"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-              >
-                <Mail className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* COLUMN 3: Product Links */}
-          {/* ──────────────────────────────────────────────────────── */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4" style={{ color: "var(--text)" }}>Product</h3>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="#features"
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  Features
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#about"
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#contact"
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* COLUMN 4: Legal Links */}
-          {/* ──────────────────────────────────────────────────────── */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4" style={{ color: "var(--text)" }}>Legal</h3>
-            <ul className="space-y-2">
-              {/* NOTE: placeholder links — replace with real policy pages when ready */}
-              <li>
-                <a
-                  href="#"
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--primary)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  Security
-                </a>
-              </li>
-            </ul>
-          </div>
+      {/* 3-column main grid */}
+      <div
+        className="grid grid-cols-1 md:grid-cols-3"
+        style={{ gap: "40px", marginBottom: "40px" }}
+      >
+        {/* Left — wordmark + tagline */}
+        <div className="footer-animate">
+          <span
+            className="block tracking-tight mb-2"
+            style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "1.125rem" }}
+          >
+            Resumence
+          </span>
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-muted)", lineHeight: 1.6 }}
+          >
+            AI resume tailoring for the modern job search.
+          </p>
         </div>
 
-        {/* ============================================================ */}
-        {/* BOTTOM BAR - Copyright and Tech Stack */}
-        {/* ============================================================ */}
-        <div className="pt-8" style={{ borderTop: "1px solid var(--border-muted)" }}>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              © 2026 AI Resume Enhancer - Team KMR. COMP 2154 Project.
-            </p>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Built with React, TypeScript, AWS & Amazon Bedrock
-            </p>
-          </div>
+        {/* Center — nav links */}
+        <div className="footer-animate flex flex-col" style={{ gap: "12px" }}>
+          {NAV_LINKS.map(({ label, href }) => (
+            <a
+              key={label}
+              href={href}
+              className="text-sm transition-colors"
+              style={{ color: "var(--text-muted)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--text-primary)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--text-muted)")
+              }
+            >
+              {label}
+            </a>
+          ))}
         </div>
+
+        {/* Right — built with */}
+        <div className="footer-animate">
+          <p
+            className="text-sm"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Built with Amazon Bedrock
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <div
+        className="text-center pt-6"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
+        <p className="text-xs" style={{ color: "var(--text-disabled)" }}>
+          © 2026 Resumence. All rights reserved.
+        </p>
       </div>
     </footer>
   );

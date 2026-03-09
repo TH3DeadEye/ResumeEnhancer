@@ -1,18 +1,22 @@
 'use client';
 
 import { ProtectedRoute } from '@/app/components/protected-route';
-import { Button } from '@/app/components/ui/button';
-import { ThemeToggle } from '@/app/components/theme-toggle';
-import { LogOut, Upload, Home, History, Settings } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 /**
  * DASHBOARD LAYOUT
- * 
+ *
  * Protected layout for all dashboard pages.
- * Includes sidebar navigation and header.
+ * Top navbar only — no sidebar. Full-width content.
  */
+
+const NAV_TABS = [
+  { href: '/dashboard',         label: 'Dashboard' },
+  { href: '/dashboard/upload',  label: 'Upload'    },
+  { href: '/dashboard/history', label: 'History'   },
+];
 
 export default function DashboardLayout({
   children,
@@ -20,167 +24,157 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
 
   const handleLogout = async () => {
     const { handleSignOut } = await import('@/lib/auth-service');
     await handleSignOut();
-    router.push('/');
+    router.push('/signin');
   };
 
-  const navItems = [
-    { href: '/dashboard', icon: Home, label: 'Dashboard' },
-    { href: '/dashboard/upload', icon: Upload, label: 'Upload Resume' },
-    { href: '/dashboard/history', icon: History, label: 'History' },
-  ];
-
-  const settingsItem = { href: '/dashboard/settings', icon: Settings, label: 'Settings' };
+  const isSettingsActive = pathname === '/dashboard/settings';
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen" style={{ backgroundColor: "var(--bg)" }}>
-        {/* Top Navigation Bar — fixed so it stays above all scrolling content */}
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-base)' }}>
+
+        {/* ── Top navbar ───────────────────────────────────────────────────── */}
         <header
-          className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md shadow-lg"
+          className="fixed top-0 left-0 right-0 z-50"
           style={{
-            backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 5%)",
-            borderBottom: "1px solid var(--border)"
+            height: '56px',
+            backgroundColor: 'var(--bg-surface)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
-          {/* Match the landing nav's container: max-w-7xl + responsive horizontal padding */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ 
-                  background: "linear-gradient(to bottom right, var(--primary), var(--secondary))"
-                }}
-              >
-                <span className="font-bold text-lg" style={{ color: "var(--bg-light)" }}>AI</span>
-              </div>
-              <span className="text-xl font-bold hidden sm:inline" style={{ color: "var(--text)" }}>Resume Enhancer</span>
-            </div>
+          <div
+            className="flex items-center justify-between h-full"
+            style={{ padding: '0 24px' }}
+          >
+            {/* LEFT — wordmark */}
+            <span
+              className="tracking-tight"
+              style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '1.125rem' }}
+            >
+              Resumence
+            </span>
 
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <Button 
-                variant="ghost" 
-                size="sm"
+            {/* CENTER — tab links */}
+            <nav className="hidden sm:flex items-center h-full" style={{ gap: '4px' }}>
+              {NAV_TABS.map(({ href, label }) => {
+                const isActive = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="relative flex items-center h-full px-4 text-sm font-medium transition-colors"
+                    style={{
+                      color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.color = 'var(--text-muted)';
+                    }}
+                  >
+                    {label}
+                    {isActive && (
+                      <span
+                        className="absolute bottom-0 left-0 right-0"
+                        style={{ height: '2px', backgroundColor: 'var(--accent)' }}
+                      />
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* RIGHT — settings + logout */}
+            <div className="flex items-center" style={{ gap: '4px' }}>
+              <Link href="/dashboard/settings">
+                <button
+                  className="p-2 rounded-md transition-colors"
+                  style={{
+                    color: isSettingsActive ? 'var(--accent)' : 'var(--text-muted)',
+                    backgroundColor: isSettingsActive
+                      ? 'var(--accent-subtle)'
+                      : 'transparent',
+                  }}
+                  title="Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              </Link>
+
+              <button
                 onClick={handleLogout}
-                className="gap-2 transition-colors"
-                style={{ color: "var(--text)" }}
+                className="p-2 rounded-md transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = 'var(--text-primary)')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = 'var(--text-muted)')
+                }
+                title="Log out"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+              </button>
             </div>
           </div>
         </header>
 
-        {/* Mobile Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md md:hidden shadow-lg"
-          style={{ 
-            backgroundColor: "color-mix(in oklch, var(--bg-light), var(--border) 10%)",
-            borderTop: "2px solid var(--border)"
-          }}>
-          <div className="grid grid-cols-4 gap-1 p-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+        {/* Mobile bottom nav — 3 tabs only */}
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 sm:hidden"
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            borderTop: '1px solid var(--border)',
+          }}
+        >
+          <div className="grid grid-cols-4 h-14">
+            {NAV_TABS.map(({ href, label }) => {
+              const isActive = pathname === href;
               return (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex flex-col items-center gap-1 rounded-lg p-2 transition-all"
+                  key={href}
+                  href={href}
+                  className="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: isActive ? "color-mix(in oklch, var(--primary), transparent 85%)" : "transparent",
-                    color: isActive ? "var(--primary)" : "var(--text)",
-                    fontWeight: isActive ? 600 : 400,
-                    border: isActive ? "1px solid var(--primary)" : "1px solid transparent"
+                    color: isActive ? 'var(--accent)' : 'var(--text-muted)',
                   }}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs">{item.label}</span>
+                  {label}
+                  {isActive && (
+                    <span
+                      className="absolute bottom-0"
+                      style={{ height: '2px', width: '32px', backgroundColor: 'var(--accent)' }}
+                    />
+                  )}
                 </Link>
               );
             })}
-            {/* Settings for mobile */}
             <Link
-              href={settingsItem.href}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 transition-all"
+              href="/dashboard/settings"
+              className="flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors"
               style={{
-                backgroundColor: pathname === settingsItem.href ? "color-mix(in oklch, var(--primary), transparent 85%)" : "transparent",
-                color: pathname === settingsItem.href ? "var(--primary)" : "var(--text)",
-                fontWeight: pathname === settingsItem.href ? 600 : 400,
-                border: pathname === settingsItem.href ? "1px solid var(--primary)" : "1px solid transparent"
+                color: isSettingsActive ? 'var(--accent)' : 'var(--text-muted)',
               }}
             >
-              <Settings className="h-5 w-5" />
-              <span className="text-xs">{settingsItem.label}</span>
+              <Settings className="h-4 w-4" />
+              Settings
             </Link>
           </div>
         </nav>
 
-        {/* Desktop Sidebar — fixed, starts below the fixed header (pt-16 = h-16) */}
-        <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col md:pt-16">
-          <div className="flex flex-col h-full" style={{
-            backgroundColor: "color-mix(in oklch, var(--bg-light), var(--border) 15%)",
-            borderRight: "2px solid var(--border)",
-            boxShadow: "2px 0 8px var(--border)"
-          }}>
-            {/* Main navigation */}
-            <div className="flex flex-col gap-2 p-4 flex-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:scale-105"
-                    style={{
-                      backgroundColor: isActive 
-                        ? "color-mix(in oklch, var(--primary), transparent 85%)" 
-                        : "transparent",
-                      color: isActive ? "var(--primary)" : "var(--text)",
-                      fontWeight: isActive ? 600 : 500,
-                      border: isActive ? "1px solid var(--primary)" : "1px solid transparent"
-                    }}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Settings at bottom */}
-            <div className="p-4 border-t-2" style={{ borderColor: "var(--border)" }}>
-              <Link
-                href={settingsItem.href}
-                className="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:scale-105"
-                style={{
-                  backgroundColor: pathname === settingsItem.href 
-                    ? "color-mix(in oklch, var(--primary), transparent 85%)" 
-                    : "transparent",
-                  color: pathname === settingsItem.href ? "var(--primary)" : "var(--text)",
-                  fontWeight: pathname === settingsItem.href ? 600 : 500,
-                  border: pathname === settingsItem.href ? "1px solid var(--primary)" : "1px solid transparent"
-                }}
-              >
-                <Settings className="h-5 w-5" />
-                <span>{settingsItem.label}</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content
-             pt-16   = clears the fixed header (h-16)
-             overflow-x-hidden = prevents horizontal bleed from hover:scale on full-width items
-        */}
-        <main className="md:pl-64 pb-16 md:pb-0 pt-16 overflow-x-hidden">
-          {/* Same width/padding system as the landing nav for visual consistency */}
+        {/* ── Main content ─────────────────────────────────────────────────── */}
+        <main
+          style={{
+            paddingTop: '56px',
+          }}
+          className="overflow-x-hidden pb-16 sm:pb-0"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>
