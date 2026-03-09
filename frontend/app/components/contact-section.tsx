@@ -4,11 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Send } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
 import { toast } from "sonner";
+import { FillButton } from "./ui/fill-button";
 
-gsap.registerPlugin(ScrollTrigger);
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -38,7 +37,7 @@ export function ContactSection() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top 82%",
-            toggleActions: "play none none none",
+            toggleActions: "play none none reverse",
           },
         }
       );
@@ -198,10 +197,10 @@ export function ContactSection() {
               />
             </div>
 
-            <button
+            <FillButton
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 text-sm font-medium transition-all"
+              className="w-full flex items-center justify-center gap-2 text-sm font-medium"
               style={{
                 backgroundColor: "var(--accent)",
                 color: "white",
@@ -210,17 +209,10 @@ export function ContactSection() {
                 opacity: isSubmitting ? 0.7 : 1,
                 cursor: isSubmitting ? "not-allowed" : "pointer",
               }}
-              onMouseEnter={(e) => {
-                if (!isSubmitting)
-                  e.currentTarget.style.backgroundColor = "var(--accent-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--accent)";
-              }}
             >
               {isSubmitting ? "Sending…" : "Send message"}
               {!isSubmitting && <Send className="h-4 w-4" />}
-            </button>
+            </FillButton>
           </form>
         </div>
       </div>

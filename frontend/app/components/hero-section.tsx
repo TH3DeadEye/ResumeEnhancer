@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, SplitText, ScrambleTextPlugin } from "@/app/lib/gsap";
 
 interface HeroSectionProps {
   onGetStarted: () => void;
@@ -14,12 +11,14 @@ interface HeroSectionProps {
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
   // ── Refs ──────────────────────────────────────────────────────────────────
 
-  const sectionRef = useRef<HTMLElement>(null);
-  const badgeRef   = useRef<HTMLDivElement>(null);
-  const titleRef   = useRef<HTMLHeadingElement>(null);
-  const subtitleRef = useRef<HTMLParagraphElement>(null);
-  const buttonsRef  = useRef<HTMLDivElement>(null);
-  const statsRef    = useRef<HTMLDivElement>(null);
+  const sectionRef   = useRef<HTMLElement>(null);
+  const badgeRef     = useRef<HTMLDivElement>(null);
+  const titleRef     = useRef<HTMLHeadingElement>(null);
+  const firstLineRef = useRef<HTMLSpanElement>(null);
+  const secondLineRef = useRef<HTMLElement>(null);
+  const subtitleRef  = useRef<HTMLParagraphElement>(null);
+  const buttonsRef   = useRef<HTMLDivElement>(null);
+  const statsRef     = useRef<HTMLDivElement>(null);
 
   // ── State — animated counters ─────────────────────────────────────────────
 
@@ -27,21 +26,20 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   const [stat2, setStat2] = useState(0);  // → 99.9 %
   const [stat3, setStat3] = useState(0);  // → 100 %
 
-  // ── Unified animation system ──────────────────────────────────────────────
+  // ── Animations ────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const elements = [
+      // ── 1. Standard entrance for badge, subtext, buttons, stats ───────────
+      const peripheralElements = [
         badgeRef.current,
-        titleRef.current,
         subtitleRef.current,
         buttonsRef.current,
         statsRef.current,
       ].filter(Boolean);
 
-      // badge → headline → subtext → buttons → stats, stagger 0.12
       gsap.fromTo(
-        elements,
+        peripheralElements,
         { opacity: 0, y: 32, filter: "blur(8px)" },
         {
           opacity: 1,
@@ -53,7 +51,46 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         }
       );
 
-      // Counter animation runs alongside entrance
+      // ── 2. ScrambleText headline (requires Club plugins) ──────────────────
+      try {
+        const firstLine  = firstLineRef.current;
+        const secondLine = secondLineRef.current;
+
+        if (firstLine && secondLine) {
+          // Hide "reimagined." until the scramble reveals it
+          gsap.set(secondLine, { opacity: 0, filter: "blur(12px)" });
+
+          const tl = gsap.timeline({ delay: 0.3 });
+
+          // Split "Your resume," into individual characters
+          const split = new SplitText(firstLine, { type: "chars" });
+
+          // Scramble each char from random uppercase to its correct letter
+          tl.from(split.chars, {
+            duration: 1.2,
+            ease: "power2.out",
+            stagger: 0.04,
+            scrambleText: { chars: "upperCase", speed: 0.4 },
+          }, 0);
+
+          // At t=1.5s reveal "reimagined." with blur fade-in
+          tl.to(secondLine, {
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 0.8,
+            ease: "power3.out",
+          }, 1.5);
+        }
+      } catch {
+        // If Club plugins aren't licensed, fall back to standard entrance
+        gsap.fromTo(
+          titleRef.current,
+          { opacity: 0, y: 32, filter: "blur(8px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out", delay: 0.12 }
+        );
+      }
+
+      // ── 3. Counter animation ──────────────────────────────────────────────
       gsap.to(
         {},
         {
@@ -119,7 +156,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           ✦ Powered by AWS Bedrock AI
         </div>
 
-        {/* Headline */}
+        {/* Headline — first line scrambles in, second line blur-fades in */}
         <h1
           ref={titleRef}
           style={{
@@ -131,9 +168,20 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             marginBottom: "1.5rem",
           }}
         >
-          <span style={{ color: "var(--text-primary)" }}>Your resume,</span>
-          <br />
-          <em style={{ color: "var(--accent)", fontStyle: "italic" }}>
+          <span
+            ref={firstLineRef}
+            style={{ color: "var(--text-primary)", display: "block" }}
+          >
+            Your resume,
+          </span>
+          <em
+            ref={secondLineRef}
+            style={{
+              color: "var(--accent)",
+              fontStyle: "italic",
+              display: "block",
+            }}
+          >
             reimagined.
           </em>
         </h1>
@@ -162,46 +210,38 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         >
           <button
             onClick={onGetStarted}
-            className="inline-flex items-center gap-2 text-sm font-medium transition-all touch-manipulation"
+            className="btn-fill inline-flex items-center gap-2 text-sm font-medium touch-manipulation"
             style={{
               backgroundColor: "var(--accent)",
               color: "white",
               borderRadius: "var(--radius-md)",
               padding: "12px 28px",
               boxShadow: "var(--shadow-sm)",
+              position: "relative",
+              overflow: "hidden",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "var(--accent-hover)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "var(--accent)")
-            }
           >
             Get Started Free <ArrowRight className="h-4 w-4" />
           </button>
 
           <button
             onClick={scrollToContact}
-            className="inline-flex items-center gap-2 text-sm font-medium transition-all touch-manipulation"
+            className="btn-fill inline-flex items-center gap-2 text-sm font-medium touch-manipulation"
             style={{
               backgroundColor: "transparent",
               color: "var(--text-secondary)",
               borderRadius: "var(--radius-md)",
               border: "1px solid var(--border)",
               padding: "12px 28px",
+              position: "relative",
+              overflow: "hidden",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "var(--text-primary)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--text-secondary)")
-            }
           >
             See How It Works
           </button>
         </div>
 
-        {/* Stat row — no borders, just number + label */}
+        {/* Stat row */}
         <div
           ref={statsRef}
           className="flex flex-wrap"
@@ -219,10 +259,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             >
               {stat1}s
             </div>
-            <div
-              className="text-sm mt-1"
-              style={{ color: "var(--text-muted)" }}
-            >
+            <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
               AI Processing Time
             </div>
           </div>
@@ -239,10 +276,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             >
               {stat2}%
             </div>
-            <div
-              className="text-sm mt-1"
-              style={{ color: "var(--text-muted)" }}
-            >
+            <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
               ATS Compatibility
             </div>
           </div>
@@ -259,10 +293,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             >
               {stat3}%
             </div>
-            <div
-              className="text-sm mt-1"
-              style={{ color: "var(--text-muted)" }}
-            >
+            <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
               Secure & Private
             </div>
           </div>

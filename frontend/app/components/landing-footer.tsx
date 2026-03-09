@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
+
 
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
@@ -31,7 +30,7 @@ export function LandingFooter() {
           scrollTrigger: {
             trigger: footerRef.current,
             start: "top 82%",
-            toggleActions: "play none none none",
+            toggleActions: "play none none reverse",
           },
         }
       );

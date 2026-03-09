@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import { Bot, TrendingUp, Search, FileText } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
+
 
 // ── Feature data ──────────────────────────────────────────────────────────────
 
@@ -15,24 +15,28 @@ const FEATURES = [
     title: "AI-Powered Tailoring",
     description:
       "Amazon Bedrock analyzes the job description and rewrites your resume to match — naturally, not robotically.",
+    image: "/images/features/feature-ai-tailoring.png",
   },
   {
     Icon: TrendingUp,
     title: "ATS Score in Seconds",
     description:
       "Know exactly how your resume performs against applicant tracking systems before you apply.",
+    image: "/images/features/feature-ats-score.png",
   },
   {
     Icon: Search,
     title: "Keyword Intelligence",
     description:
       "Surface missing keywords recruiters are scanning for and see exactly where to add them.",
+    image: "/images/features/feature-keywords.png",
   },
   {
     Icon: FileText,
     title: "Instant PDF Export",
     description:
       "Download your tailored resume immediately. No accounts needed for preview — just results.",
+    image: "/images/features/feature-pdf-export.png",
   },
 ];
 
@@ -59,7 +63,7 @@ export function FeaturesSection() {
             scrollTrigger: {
               trigger: row,
               start: "top 82%",
-              toggleActions: "play none none none",
+              toggleActions: "play none none reverse",
             },
           }
         );
@@ -78,7 +82,7 @@ export function FeaturesSection() {
           scrollTrigger: {
             trigger: ".features-header",
             start: "top 82%",
-            toggleActions: "play none none none",
+            toggleActions: "play none none reverse",
           },
         }
       );
@@ -126,7 +130,7 @@ export function FeaturesSection() {
       {/* Alternating rows */}
       <div style={{ maxWidth: "960px", margin: "0 auto" }}>
         <div className="flex flex-col" style={{ gap: "80px" }}>
-          {FEATURES.map(({ Icon, title, description }, i) => {
+          {FEATURES.map(({ Icon, title, description, image }, i) => {
             const isEven = i % 2 === 0;
 
             return (
@@ -178,23 +182,23 @@ export function FeaturesSection() {
                   </p>
                 </div>
 
-                {/* Abstract visual placeholder */}
+                {/* Feature image */}
                 <div
-                  className="hidden lg:flex items-center justify-center"
+                  className="hidden lg:block"
                   style={{
                     order: isEven ? 2 : 1,
-                    backgroundColor: "var(--accent-subtle)",
                     borderRadius: "var(--radius-xl)",
+                    overflow: "hidden",
                     height: "280px",
+                    position: "relative",
                   }}
                 >
-                  <Icon
-                    style={{
-                      color: "var(--accent)",
-                      width: "80px",
-                      height: "80px",
-                      opacity: 0.55,
-                    }}
+                  <Image
+                    src={image}
+                    alt={title}
+                    fill
+                    style={{ objectFit: "cover" }}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                   />
                 </div>
               </div>

@@ -2,10 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { AlertCircle, Zap, CheckCircle } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
+
 
 // ── Card data ─────────────────────────────────────────────────────────────────
 
@@ -50,7 +49,7 @@ export function AboutSection() {
           scrollTrigger: {
             trigger: ".about-left",
             start: "top 82%",
-            toggleActions: "play none none none",
+            toggleActions: "play none none reverse",
           },
         }
       );
@@ -69,7 +68,7 @@ export function AboutSection() {
           scrollTrigger: {
             trigger: ".about-cards",
             start: "top 82%",
-            toggleActions: "play none none none",
+            toggleActions: "play none none reverse",
           },
         }
       );

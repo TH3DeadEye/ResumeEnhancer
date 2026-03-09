@@ -8,7 +8,8 @@ import { Checkbox } from './ui/checkbox';
 import { Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
-import gsap from 'gsap';
+import { gsap } from '@/app/lib/gsap';
+import { FillButton } from './ui/fill-button';
 import {
   handleSignIn,
   handleSignUp,
@@ -370,20 +371,18 @@ export function SignInPage() {
                 </>
               )}
 
-              <button
+              <FillButton
                 type="button"
                 onClick={handleForgotPwSubmit}
                 disabled={isLoading}
                 style={{ ...buttonStyle, opacity: isLoading ? 0.7 : 1 }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--accent-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
               >
                 {isLoading
                   ? 'Please wait...'
                   : forgotPw.codeSent
                   ? 'Reset Password'
                   : 'Send Reset Code'}
-              </button>
+              </FillButton>
 
               <div className="text-center">
                 <button
@@ -609,13 +608,11 @@ export function SignInPage() {
             )}
 
             {/* Submit */}
-            <button
+            <FillButton
               type="button"
               onClick={handleSubmit}
               disabled={isLoading}
               style={{ ...buttonStyle, opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
-              onMouseEnter={e => { if (!isLoading) e.currentTarget.style.backgroundColor = 'var(--accent-hover)'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
             >
               {isLoading
                 ? 'Please wait...'
@@ -624,7 +621,7 @@ export function SignInPage() {
                 : isSignUp
                 ? 'Create Account'
                 : 'Sign In'}
-            </button>
+            </FillButton>
 
             {/* Toggle sign-in / sign-up */}
             {!needsVerification && (

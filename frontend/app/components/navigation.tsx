@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
+import { FillButton } from "./ui/fill-button";
 
 interface NavigationProps {
   onNavigate: (page: string) => void;
@@ -250,24 +248,18 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
               </button>
             )}
 
-            <button
+            <FillButton
               onClick={() => onNavigate("signin")}
-              className="nav-menu-item text-sm font-medium transition-all duration-200"
+              className="nav-menu-item text-sm font-medium"
               style={{
                 backgroundColor: "var(--accent)",
                 color: "white",
                 borderRadius: "var(--radius-md)",
                 padding: "10px 20px",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "var(--accent-hover)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "var(--accent)")
-              }
             >
               Sign In
-            </button>
+            </FillButton>
           </div>
 
           {/* Mobile hamburger */}
@@ -337,7 +329,7 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
                 </button>
               )}
 
-              <button
+              <FillButton
                 onClick={() => onNavigate("signin")}
                 className="mobile-menu-item block w-full text-center py-3 px-4 text-sm font-medium mt-2 touch-manipulation"
                 style={{
@@ -348,7 +340,7 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
                 }}
               >
                 Sign In
-              </button>
+              </FillButton>
             </div>
           </div>
         )}
