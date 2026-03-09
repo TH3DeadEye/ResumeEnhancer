@@ -140,6 +140,21 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
     >
       <div style={{ maxWidth: "720px" }}>
 
+        {/* Hero wordmark — fades out into navbar as user scrolls */}
+        <div
+          id="hero-wordmark"
+          style={{
+            fontSize: "clamp(48px, 8vw, 96px)",
+            fontWeight: 600,
+            color: "var(--accent)",
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+            marginBottom: "clamp(24px, 3vw, 40px)",
+          }}
+        >
+          Resumence
+        </div>
+
         {/* Badge */}
         <div
           ref={badgeRef}

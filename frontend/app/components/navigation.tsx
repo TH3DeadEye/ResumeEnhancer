@@ -64,20 +64,6 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
         { y: 0, opacity: 1, duration: 1, ease: "power3.out" }
       );
 
-      if (logoRef.current) {
-        gsap.fromTo(
-          logoRef.current,
-          { scale: 0, rotation: -180 },
-          {
-            scale: 1,
-            rotation: 0,
-            duration: 0.8,
-            ease: "elastic.out(1, 0.5)",
-            delay: 0.3,
-          }
-        );
-      }
-
       const menuItems = navRef.current.querySelectorAll(".nav-menu-item");
       if (menuItems.length > 0) {
         gsap.fromTo(
@@ -96,22 +82,43 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
     }
   }, []);
 
-  // ── Logo scale on scroll ──────────────────────────────────────────────────
+  // ── Logo morph scroll animation ───────────────────────────────────────────
+  // hero-wordmark (#hero-wordmark) fades out as user scrolls;
+  // nav-wordmark (#nav-wordmark) fades in, creating the illusion of morphing.
 
   useEffect(() => {
-    if (logoRef.current) {
-      gsap.to(logoRef.current, {
-        scale: 1.1,
-        scrollTrigger: {
-          trigger: "body",
-          start: "top top",
-          end: "100px",
-          scrub: 1,
-          toggleActions: "play none none reverse",
-        },
-      });
-    }
-  }, []);
+    if (currentPage !== "landing") return;
+
+    const ctx = gsap.context(() => {
+      const heroWordmark = document.getElementById("hero-wordmark");
+      const navWordmark  = document.getElementById("nav-wordmark");
+
+      if (!heroWordmark || !navWordmark) return;
+
+      const triggerConfig: ScrollTrigger.Vars = {
+        trigger: "#home",
+        start: "top top",
+        end: "+=200",
+        scrub: true,
+      };
+
+      // Hero wordmark: fade out + subtle scale down
+      gsap.fromTo(
+        heroWordmark,
+        { opacity: 1, scale: 1 },
+        { opacity: 0, scale: 0.92, ease: "none", scrollTrigger: triggerConfig }
+      );
+
+      // Nav wordmark: fade in + scale from slightly large to 1
+      gsap.fromTo(
+        navWordmark,
+        { opacity: 0, scale: 1.35 },
+        { opacity: 1, scale: 1, ease: "none", scrollTrigger: triggerConfig }
+      );
+    });
+
+    return () => ctx.revert();
+  }, [currentPage]);
 
   // ── Mobile menu animation ─────────────────────────────────────────────────
 
@@ -189,8 +196,9 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             onClick={() => onNavigate("landing")}
           >
             <span
+              id="nav-wordmark"
               className="text-xl tracking-tight"
-              style={{ color: "var(--text-primary)", fontWeight: 600 }}
+              style={{ color: "var(--text-primary)", fontWeight: 600, opacity: 0 }}
             >
               Resumence
             </span>
