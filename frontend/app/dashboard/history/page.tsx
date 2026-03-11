@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/app/components/ui/card';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Badge } from '@/app/components/ui/badge';
-import { FileText, Download, Eye, Search, Calendar, Filter, Sparkles, Clock } from 'lucide-react';
+import { FileText, Download, Eye, Search, Sparkles, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { FillButton } from '@/app/components/ui/fill-button';
 
@@ -18,314 +14,229 @@ interface Resume {
   enhancedUrl?: string;
 }
 
+const STATUS_CONFIG = {
+  enhanced:   { label: 'Enhanced',  color: 'var(--success)' },
+  parsed:     { label: 'Ready',     color: 'var(--accent)'  },
+  processing: { label: 'Processing',color: 'var(--warning)' },
+  failed:     { label: 'Failed',    color: 'var(--danger)'  },
+};
+
+const FILTERS = ['all', 'enhanced', 'parsed', 'processing'] as const;
+
 export default function HistoryPage() {
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [resumes,       setResumes      ] = useState<Resume[]>([]);
+  const [searchQuery,   setSearchQuery  ] = useState('');
+  const [filterStatus,  setFilterStatus ] = useState<string>('all');
 
-  useEffect(() => {
-    fetchResumes();
-  }, []);
+  useEffect(() => { fetchResumes(); }, []);
 
-  const fetchResumes = async () => {
-    // Mock data
+  const fetchResumes = () => {
     const mockResumes: Resume[] = [
-      {
-        id: '1',
-        fileName: 'John_Doe_Resume.pdf',
-        uploadDate: '2026-02-05',
-        status: 'enhanced',
-        jobTitle: 'Senior Software Engineer',
-        enhancedUrl: '/api/resume/download/1',
-      },
-      {
-        id: '2',
-        fileName: 'Resume_Latest.pdf',
-        uploadDate: '2026-02-04',
-        status: 'parsed',
-      },
-      {
-        id: '3',
-        fileName: 'CV_2026.pdf',
-        uploadDate: '2026-02-01',
-        status: 'processing',
-      },
-      {
-        id: '4',
-        fileName: 'Software_Engineer_Resume.pdf',
-        uploadDate: '2026-01-28',
-        status: 'enhanced',
-        jobTitle: 'Full Stack Developer',
-      },
-      {
-        id: '5',
-        fileName: 'My_Resume_2026.pdf',
-        uploadDate: '2026-01-25',
-        status: 'enhanced',
-        jobTitle: 'Product Manager',
-      },
+      { id: '1', fileName: 'John_Doe_Resume.pdf',           uploadDate: '2026-02-05', status: 'enhanced',   jobTitle: 'Senior Software Engineer', enhancedUrl: '/api/resume/download/1' },
+      { id: '2', fileName: 'Resume_Latest.pdf',              uploadDate: '2026-02-04', status: 'parsed' },
+      { id: '3', fileName: 'CV_2026.pdf',                    uploadDate: '2026-02-01', status: 'processing' },
+      { id: '4', fileName: 'Software_Engineer_Resume.pdf',   uploadDate: '2026-01-28', status: 'enhanced',   jobTitle: 'Full Stack Developer' },
+      { id: '5', fileName: 'My_Resume_2026.pdf',             uploadDate: '2026-01-25', status: 'enhanced',   jobTitle: 'Product Manager' },
     ];
-
     setResumes(mockResumes);
   };
 
-  const filteredResumes = resumes.filter(resume => {
-    const matchesSearch = resume.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resume.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || resume.status === filterStatus;
+  const filteredResumes = resumes.filter(r => {
+    const matchesSearch = r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || r.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
-  const getStatusBadge = (status: Resume['status']) => {
-    const configs = {
-      enhanced: { label: 'Enhanced', color: 'var(--success)', icon: Sparkles },
-      parsed: { label: 'Ready', color: 'var(--primary)', icon: FileText },
-      processing: { label: 'Processing', color: 'var(--warning)', icon: Clock },
-      failed: { label: 'Failed', color: 'var(--danger)', icon: FileText }
-    };
-    
-    const config = configs[status];
-    const Icon = config.icon;
-    
+  const StatusBadge = ({ status }: { status: Resume['status'] }) => {
+    const cfg = STATUS_CONFIG[status];
     return (
-      <Badge 
-        variant="secondary" 
-        className="gap-1"
-        style={{ 
-          backgroundColor: `color-mix(in oklch, ${config.color}, transparent 85%)`,
-          color: config.color,
-          border: `1px solid ${config.color}`,
-          padding: "0.375rem 0.75rem"
-        }}
-      >
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
+      <span style={{
+        fontSize: '0.6875rem', fontWeight: 600, color: cfg.color,
+        backgroundColor: `color-mix(in oklch, ${cfg.color} 12%, transparent)`,
+        border: `1px solid ${cfg.color}`,
+        borderRadius: '999px', padding: '3px 9px',
+        letterSpacing: '0.02em', whiteSpace: 'nowrap',
+      }}>
+        {cfg.label}
+      </span>
     );
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* ── Header ── */}
       <div>
-        <h1 className="text-4xl font-bold mb-2" style={{ color: "var(--text)" }}>
-          Resume History
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+          History
         </h1>
-        <p className="text-lg" style={{ color: "var(--text-muted)" }}>
-          View and manage all your uploaded and enhanced resumes
+        <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)' }}>
+          All your uploaded and enhanced resumes
         </p>
       </div>
 
-      {/* Search and Filter Bar */}
-      <Card className="border-2" style={{ 
-        backgroundColor: "var(--bg-light)",
-        borderColor: "var(--border)"
-      }}>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5" 
-                style={{ color: "var(--text-muted)" }} />
-              <Input
-                placeholder="Search by filename or job title..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                style={{
-                  backgroundColor: "var(--bg)",
-                  borderColor: "var(--border)",
-                  color: "var(--text)"
-                }}
-              />
-            </div>
+      {/* ── Search + filters ── */}
+      <div
+        style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '20px',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+          {/* Search */}
+          <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
+            <Search
+              className="absolute"
+              style={{
+                position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
+                color: 'var(--text-muted)', width: '16px', height: '16px', pointerEvents: 'none',
+              }}
+            />
+            <input
+              placeholder="Search by filename or job title…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                paddingLeft: '36px',
+                paddingRight: '12px',
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                backgroundColor: 'var(--bg-sunken)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--text-primary)',
+                fontSize: '0.875rem',
+                outline: 'none',
+              }}
+            />
+          </div>
 
-            {/* Filter Buttons */}
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'enhanced', 'parsed', 'processing'].map((status) => (
-                <Button
+          {/* Filter buttons */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {FILTERS.map((status) => {
+              const isActive = filterStatus === status;
+              return (
+                <FillButton
                   key={status}
-                  size="sm"
-                  variant={filterStatus === status ? "default" : "outline"}
                   onClick={() => setFilterStatus(status)}
-                  className="capitalize transition-all duration-300"
-                  style={filterStatus === status ? {
-                    background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-                    color: "var(--bg-light)",
-                    border: "none"
-                  } : {
-                    borderColor: "var(--border)",
-                    color: "var(--text)"
+                  fillColor="var(--accent)"
+                  fillOpacity={0.12}
+                  hoverTextColor={isActive ? undefined : 'var(--accent)'}
+                  className="text-xs font-medium capitalize"
+                  style={{
+                    backgroundColor: isActive ? 'var(--accent-subtle)' : 'transparent',
+                    color: isActive ? 'var(--accent-text)' : 'var(--text-secondary)',
+                    border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-md)',
+                    padding: '6px 12px',
                   }}
                 >
-                  <Filter className="h-4 w-4 mr-1" />
                   {status}
-                </Button>
-              ))}
-            </div>
+                </FillButton>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Results Count */}
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Showing <span className="font-semibold" style={{ color: "var(--text)" }}>
-                {filteredResumes.length}
-              </span> of <span className="font-semibold" style={{ color: "var(--text)" }}>
-                {resumes.length}
-              </span> resumes
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Count */}
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+          Showing{' '}
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{filteredResumes.length}</span>
+          {' '}of{' '}
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{resumes.length}</span>
+          {' '}resumes
+        </p>
+      </div>
 
-      {/* Resume List */}
+      {/* ── Resume list ── */}
       {filteredResumes.length === 0 ? (
-        <Card className="border-2" style={{ 
-          backgroundColor: "var(--bg-light)",
-          borderColor: "var(--border)"
+        <div style={{
+          backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)', padding: '64px 24px',
+          textAlign: 'center', boxShadow: 'var(--shadow-sm)',
         }}>
-          <CardContent className="py-16 text-center">
-            <div className="mb-4 inline-block p-6 rounded-full" 
-              style={{ backgroundColor: "color-mix(in oklch, var(--primary), transparent 90%)" }}>
-              <FileText className="h-16 w-16" style={{ color: "var(--primary)" }} />
-            </div>
-            <p className="text-lg font-medium mb-2" style={{ color: "var(--text)" }}>
-              No resumes found
-            </p>
-            <p style={{ color: "var(--text-muted)" }}>
-              {searchQuery || filterStatus !== 'all' 
-                ? "Try adjusting your search or filter" 
-                : "Upload your first resume to get started"}
-            </p>
-          </CardContent>
-        </Card>
+          <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: 'var(--text-disabled)' }} />
+          <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '6px' }}>No resumes found</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+            {searchQuery || filterStatus !== 'all'
+              ? 'Try adjusting your search or filter'
+              : 'Upload your first resume to get started'}
+          </p>
+        </div>
       ) : (
-        <div className="grid gap-4">
-          {filteredResumes.map((resume, index) => (
-            <Card 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {filteredResumes.map((resume) => (
+            <div
               key={resume.id}
-              className="group border-2 overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-              style={{ 
-                backgroundColor: "var(--bg-light)",
-                borderColor: "var(--border)",
-                animationDelay: `${index * 50}ms`
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px 20px',
               }}
             >
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left Section - File Info */}
-                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className="p-4 rounded-xl transition-all duration-300 group-hover:scale-110" 
-                      style={{ 
-                        backgroundColor: "color-mix(in oklch, var(--primary), transparent 85%)",
-                        border: "1px solid var(--primary)"
-                      }}>
-                      <FileText className="h-7 w-7" style={{ color: "var(--primary)" }} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg mb-2 truncate" style={{ color: "var(--text)" }}>
-                        {resume.fileName}
-                      </h3>
-                      
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm" 
-                        style={{ color: "var(--text-muted)" }}>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>
-                            {new Date(resume.uploadDate).toLocaleDateString('en-US', { 
-                              month: 'long', 
-                              day: 'numeric', 
-                              year: 'numeric' 
-                            })}
-                          </span>
-                        </div>
-                        
-                        {resume.jobTitle && (
-                          <div className="flex items-center gap-1">
-                            <span>•</span>
-                            <span className="truncate font-medium" style={{ color: "var(--text)" }}>
-                              {resume.jobTitle}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Section - Status and Actions */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:flex-shrink-0">
-                    {getStatusBadge(resume.status)}
-
-                    <div className="flex gap-2">
-                      {resume.status === 'enhanced' && (
-                        <>
-                          <FillButton
-                            fillColor="var(--accent-subtle)"
-                            fillOpacity={1}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium"
-                            style={{
-                              backgroundColor: 'transparent',
-                              color: 'var(--text-secondary)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 'var(--radius-md)',
-                              padding: '7px 13px',
-                            }}
-                          >
-                            <Eye className="h-3.5 w-3.5" /> View
-                          </FillButton>
-                          <FillButton
-                            fillColor="var(--accent-hover)"
-                            fillOpacity={0.18}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium"
-                            style={{
-                              backgroundColor: 'var(--accent)',
-                              color: 'white',
-                              borderRadius: 'var(--radius-md)',
-                              padding: '7px 13px',
-                            }}
-                          >
-                            <Download className="h-3.5 w-3.5" /> Download
-                          </FillButton>
-                        </>
-                      )}
-
-                      {resume.status === 'parsed' && (
-                        <Link href={`/dashboard/upload?resumeId=${resume.id}`}>
-                          <FillButton
-                            fillColor="var(--accent-hover)"
-                            fillOpacity={0.18}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium"
-                            style={{
-                              backgroundColor: 'var(--accent)',
-                              color: 'white',
-                              borderRadius: 'var(--radius-md)',
-                              padding: '7px 13px',
-                            }}
-                          >
-                            <Sparkles className="h-3.5 w-3.5" /> Enhance
-                          </FillButton>
-                        </Link>
-                      )}
-
-                      {resume.status === 'processing' && (
-                        <span
-                          className="inline-flex items-center gap-1.5 text-xs font-medium"
-                          style={{
-                            color: 'var(--text-muted)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius-md)',
-                            padding: '7px 13px',
-                          }}
-                        >
-                          <Clock className="h-3.5 w-3.5 animate-spin" /> Processing
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              {/* File info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                <FileText className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '0.9375rem', marginBottom: '2px' }} className="truncate">
+                    {resume.fileName}
+                  </p>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                    {new Date(resume.uploadDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {resume.jobTitle && <> &middot; {resume.jobTitle}</>}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                <StatusBadge status={resume.status} />
+
+                {resume.status === 'enhanced' && (
+                  <>
+                    <FillButton
+                      fillColor="var(--accent)"
+                      fillOpacity={0.12}
+                      hoverTextColor="var(--accent)"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium"
+                      style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                    >
+                      <Eye className="h-3.5 w-3.5" /> View
+                    </FillButton>
+                    <FillButton
+                      className="inline-flex items-center gap-1.5 text-xs font-medium"
+                      style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                    >
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </FillButton>
+                  </>
+                )}
+
+                {resume.status === 'parsed' && (
+                  <Link href={`/dashboard/upload?resumeId=${resume.id}`}>
+                    <FillButton
+                      className="inline-flex items-center gap-1.5 text-xs font-medium"
+                      style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" /> Enhance
+                    </FillButton>
+                  </Link>
+                )}
+
+                {resume.status === 'processing' && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}>
+                    <Clock className="h-3.5 w-3.5 animate-spin" /> Processing
+                  </span>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

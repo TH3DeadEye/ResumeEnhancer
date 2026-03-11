@@ -126,6 +126,15 @@ export function SignInPage() {
     met: rule.test(formData.password),
   }));
 
+  // ── Reset stale state on mount ────────────────────────────────────────────
+
+  useEffect(() => {
+    setSignInError(null);
+    setIsSignUp(false);
+    setNeedsVerification(false);
+    setForgotPw(fp => ({ ...fp, active: false, codeSent: false }));
+  }, []);
+
   // ── GSAP: animate main card on mount ─────────────────────────────────────
 
   useEffect(() => {

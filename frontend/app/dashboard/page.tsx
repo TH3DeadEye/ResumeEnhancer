@@ -115,8 +115,6 @@ export default function DashboardPage() {
 
         <Link href="/dashboard/upload">
           <FillButton
-            fillColor="var(--accent-hover)"
-            fillOpacity={0.18}
             className="inline-flex items-center gap-2 text-sm font-medium"
             style={{
               backgroundColor: 'var(--accent)',
@@ -182,22 +180,20 @@ export default function DashboardPage() {
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '20px' }}>
               Upload your first resume to get started
             </p>
-            <Link href="/dashboard/upload">
-              <FillButton
-                fillColor="var(--accent-hover)"
-                fillOpacity={0.18}
-                className="inline-flex items-center gap-2 text-sm font-medium"
-                style={{
-                  backgroundColor: 'var(--accent)',
-                  color: 'white',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '10px 20px',
-                }}
-              >
-                <Upload className="h-4 w-4" />
-                Upload Your First Resume
-              </FillButton>
-            </Link>
+              <Link href="/dashboard/upload">
+                <FillButton
+                  className="inline-flex items-center gap-2 text-sm font-medium"
+                  style={{
+                    backgroundColor: 'var(--accent)',
+                    color: 'white',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 20px',
+                  }}
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Your First Resume
+                </FillButton>
+              </Link>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -236,40 +232,37 @@ export default function DashboardPage() {
                   {resume.status === 'enhanced' && (
                     <div className="flex gap-2">
                       <FillButton
-                        fillColor="var(--accent-subtle)"
-                        fillOpacity={1}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium"
-                        style={{
-                          backgroundColor: 'transparent',
-                          color: 'var(--text-secondary)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-md)',
-                          padding: '7px 13px',
-                        }}
-                      >
-                        <Eye className="h-3.5 w-3.5" /> View
-                      </FillButton>
-                      <FillButton
-                        fillColor="var(--accent-hover)"
-                        fillOpacity={0.18}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium"
-                        style={{
-                          backgroundColor: 'var(--accent)',
-                          color: 'white',
-                          borderRadius: 'var(--radius-md)',
-                          padding: '7px 13px',
-                        }}
-                      >
-                        <Download className="h-3.5 w-3.5" /> Download
-                      </FillButton>
+                            fillColor="var(--accent)"
+                            fillOpacity={0.12}
+                            hoverTextColor="var(--accent)"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium"
+                            style={{
+                              backgroundColor: 'transparent',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '7px 13px',
+                            }}
+                          >
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </FillButton>
+                          <FillButton
+                            className="inline-flex items-center gap-1.5 text-xs font-medium"
+                            style={{
+                              backgroundColor: 'var(--accent)',
+                              color: 'white',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '7px 13px',
+                            }}
+                          >
+                            <Download className="h-3.5 w-3.5" /> Download
+                          </FillButton>
                     </div>
                   )}
 
                   {resume.status === 'parsed' && (
                     <Link href={`/dashboard/upload?resumeId=${resume.id}`}>
                       <FillButton
-                        fillColor="var(--accent-hover)"
-                        fillOpacity={0.18}
                         className="inline-flex items-center gap-1.5 text-xs font-medium"
                         style={{
                           backgroundColor: 'var(--accent)',

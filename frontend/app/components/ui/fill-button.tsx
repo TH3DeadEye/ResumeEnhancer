@@ -7,9 +7,9 @@
  * overlay from that side. On mouseleave: sweep it back out from the exit side.
  *
  * Props:
- *   fillColor   — background of the fill overlay
- *   fillOpacity — max opacity of the overlay (0.18 for dark/accent buttons,
- *                 1.0 for outlined buttons using var(--accent-subtle))
+ *   fillColor      — background of the fill overlay
+ *   fillOpacity    — max opacity of overlay (0.22 for solid/accent, 0.12 for outlined)
+ *   hoverTextColor — optional: if set, transitions button text to this color on hover
  */
 
 import { useRef } from "react";
@@ -22,11 +22,11 @@ function getSideOffset(
   el: HTMLElement
 ): { x: string; y: string } {
   const rect = el.getBoundingClientRect();
-  const relX  = (e.clientX - rect.left)  / rect.width;   // 0 … 1
-  const relY  = (e.clientY - rect.top)   / rect.height;  // 0 … 1
+  const relX  = (e.clientX - rect.left)  / rect.width;
+  const relY  = (e.clientY - rect.top)   / rect.height;
 
-  if (relX > relY && relX > 1 - relY) return { x: "100%",  y: "0%"   }; // right
-  if (relX < relY && relX < 1 - relY) return { x: "-100%", y: "0%"   }; // left
+  if (relX > relY && relX > 1 - relY) return { x: "100%",  y: "0%"    }; // right
+  if (relX < relY && relX < 1 - relY) return { x: "-100%", y: "0%"    }; // left
   if (relY < relX && relY < 1 - relX) return { x: "0%",    y: "-100%" }; // top
   return                                      { x: "0%",    y: "100%"  }; // bottom
 }
@@ -34,22 +34,25 @@ function getSideOffset(
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface FillButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  fillColor?:   string;
-  fillOpacity?: number;
-  children:     React.ReactNode;
+  fillColor?:      string;
+  fillOpacity?:    number;
+  hoverTextColor?: string;
+  children:        React.ReactNode;
 }
 
 interface FillLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  fillColor?:   string;
-  fillOpacity?: number;
-  children:     React.ReactNode;
+  fillColor?:      string;
+  fillOpacity?:    number;
+  hoverTextColor?: string;
+  children:        React.ReactNode;
 }
 
 // ── FillButton ────────────────────────────────────────────────────────────────
 
 export function FillButton({
-  fillColor   = "var(--accent-hover)",
-  fillOpacity = 0.18,
+  fillColor      = "white",
+  fillOpacity    = 0.22,
+  hoverTextColor,
   style,
   className,
   children,
@@ -66,6 +69,9 @@ export function FillButton({
         { x: "0%", y: "0%", opacity: fillOpacity, duration: 0.25, ease: "power2.out" }
       );
     }
+    if (hoverTextColor) {
+      e.currentTarget.style.color = hoverTextColor;
+    }
   };
 
   const onLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -77,6 +83,10 @@ export function FillButton({
           if (fillRef.current) gsap.set(fillRef.current, { x: "0%", y: "0%", opacity: 0 });
         },
       });
+    }
+    if (hoverTextColor) {
+      // Restore to the inline style color, or clear to fall back to cascade
+      e.currentTarget.style.color = (style as React.CSSProperties)?.color ?? '';
     }
   };
 
@@ -118,8 +128,9 @@ export function FillButton({
 // ── FillLink ──────────────────────────────────────────────────────────────────
 
 export function FillLink({
-  fillColor   = "var(--accent-subtle)",
-  fillOpacity = 1,
+  fillColor      = "var(--accent)",
+  fillOpacity    = 0.12,
+  hoverTextColor,
   style,
   className,
   children,
@@ -136,6 +147,9 @@ export function FillLink({
         { x: "0%", y: "0%", opacity: fillOpacity, duration: 0.25, ease: "power2.out" }
       );
     }
+    if (hoverTextColor) {
+      e.currentTarget.style.color = hoverTextColor;
+    }
   };
 
   const onLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -147,6 +161,9 @@ export function FillLink({
           if (fillRef.current) gsap.set(fillRef.current, { x: "0%", y: "0%", opacity: 0 });
         },
       });
+    }
+    if (hoverTextColor) {
+      e.currentTarget.style.color = (style as React.CSSProperties)?.color ?? '';
     }
   };
 

@@ -163,8 +163,6 @@ export default function SettingsPage() {
         <FillButton
           onClick={handleSaveProfile}
           disabled={isLoading}
-          fillColor="var(--accent-hover)"
-          fillOpacity={0.18}
           className="text-sm font-medium"
           style={{
             backgroundColor: 'var(--accent)',
@@ -222,8 +220,9 @@ export default function SettingsPage() {
           </div>
           <FillButton
             onClick={handleChangePassword}
-            fillColor="var(--accent-subtle)"
-            fillOpacity={1}
+            fillColor="var(--accent)"
+            fillOpacity={0.12}
+            hoverTextColor="var(--accent)"
             className="text-sm font-medium"
             style={{
               color: 'var(--accent-text)',
@@ -307,8 +306,6 @@ export default function SettingsPage() {
           </div>
           <FillButton
             onClick={handleDeleteAccount}
-            fillColor="color-mix(in oklch, var(--danger) 80%, white)"
-            fillOpacity={0.2}
             className="text-sm font-medium flex-shrink-0"
             style={{
               backgroundColor: 'var(--danger)',
