@@ -6,6 +6,7 @@ import { Label } from '@/app/components/ui/label';
 import { User, Mail, Lock, Bell, Shield, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/app/components/ui/sonner';
+import { FillButton } from '@/app/components/ui/fill-button';
 
 // ── Shared card styles ────────────────────────────────────────────────────────
 
@@ -159,10 +160,12 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <button
+        <FillButton
           onClick={handleSaveProfile}
           disabled={isLoading}
-          className="text-sm font-medium transition-all"
+          fillColor="var(--accent-hover)"
+          fillOpacity={0.18}
+          className="text-sm font-medium"
           style={{
             backgroundColor: 'var(--accent)',
             color: 'white',
@@ -171,15 +174,9 @@ export default function SettingsPage() {
             opacity: isLoading ? 0.7 : 1,
             cursor: isLoading ? 'not-allowed' : 'pointer',
           }}
-          onMouseEnter={(e) => {
-            if (!isLoading) e.currentTarget.style.backgroundColor = 'var(--accent-hover)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--accent)';
-          }}
         >
           {isLoading ? 'Saving…' : 'Save Changes'}
-        </button>
+        </FillButton>
       </div>
 
       {/* ── Security card ────────────────────────────────────────────────── */}
@@ -223,9 +220,11 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-          <button
+          <FillButton
             onClick={handleChangePassword}
-            className="text-sm font-medium transition-colors"
+            fillColor="var(--accent-subtle)"
+            fillOpacity={1}
+            className="text-sm font-medium"
             style={{
               color: 'var(--accent-text)',
               border: '1px solid var(--accent)',
@@ -233,11 +232,9 @@ export default function SettingsPage() {
               padding: '6px 14px',
               backgroundColor: 'transparent',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
-            Change
-          </button>
+            Change Password
+          </FillButton>
         </div>
 
         {/* Notifications row */}
@@ -308,22 +305,20 @@ export default function SettingsPage() {
               Permanently delete your account and all associated data
             </p>
           </div>
-          <button
+          <FillButton
             onClick={handleDeleteAccount}
-            className="text-sm font-medium transition-all flex-shrink-0"
+            fillColor="color-mix(in oklch, var(--danger) 80%, white)"
+            fillOpacity={0.2}
+            className="text-sm font-medium flex-shrink-0"
             style={{
               backgroundColor: 'var(--danger)',
               color: 'white',
               borderRadius: 'var(--radius-md)',
               padding: '10px 20px',
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.opacity = '0.85')
-            }
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
             Delete Account
-          </button>
+          </FillButton>
         </div>
       </div>
 

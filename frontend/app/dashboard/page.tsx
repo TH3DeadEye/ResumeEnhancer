@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Button } from '@/app/components/ui/button';
-import { Upload, FileText, TrendingUp, Clock, Download, Eye, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { FileText, Download, Eye, Sparkles, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { Badge } from '@/app/components/ui/badge';
+import { gsap } from '@/app/lib/gsap';
+import { FillButton } from '@/app/components/ui/fill-button';
 
 interface Resume {
   id: string;
@@ -16,25 +15,39 @@ interface Resume {
   enhancedUrl?: string;
 }
 
+const STATUS_CONFIG = {
+  enhanced:   { label: 'Enhanced',  color: 'var(--success)' },
+  parsed:     { label: 'Ready',     color: 'var(--accent)'  },
+  processing: { label: 'Processing',color: 'var(--warning)' },
+  failed:     { label: 'Failed',    color: 'var(--danger)'  },
+};
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState('User');
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    enhanced: 0,
-    thisMonth: 0,
-  });
+  const [resumes,  setResumes]  = useState<Resume[]>([]);
+  const [stats,    setStats]    = useState({ total: 0, enhanced: 0 });
+
+  const headerRef  = useRef<HTMLDivElement>(null);
+  const listRef    = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadUserData();
     fetchResumes();
   }, []);
 
+  useEffect(() => {
+    const els = [headerRef.current, listRef.current].filter(Boolean);
+    gsap.fromTo(
+      els,
+      { opacity: 0, y: 32, filter: 'blur(8px)' },
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }
+    );
+  }, []);
+
   const loadUserData = async () => {
     try {
       const { getUserInfo } = await import('@/lib/auth-service');
       const result = await getUserInfo();
-      
       if (result.success && result.result) {
         setUserName(result.result.name || result.result.email?.split('@')[0] || 'User');
       }
@@ -44,309 +57,237 @@ export default function DashboardPage() {
   };
 
   const fetchResumes = async () => {
-    try {
-      // Mock data
-      const mockResumes: Resume[] = [
-        {
-          id: '1',
-          fileName: 'John_Doe_Resume.pdf',
-          uploadDate: '2026-02-05',
-          status: 'enhanced',
-          jobTitle: 'Senior Software Engineer',
-          enhancedUrl: '/api/resume/download/1',
-        },
-        {
-          id: '2',
-          fileName: 'Resume_Latest.pdf',
-          uploadDate: '2026-02-04',
-          status: 'parsed',
-        },
-        {
-          id: '3',
-          fileName: 'CV_2026.pdf',
-          uploadDate: '2026-02-01',
-          status: 'processing',
-        },
-      ];
-
-      setResumes(mockResumes);
-      setStats({
-        total: mockResumes.length,
-        enhanced: mockResumes.filter(r => r.status === 'enhanced').length,
-        thisMonth: mockResumes.length,
-      });
-    } catch (error) {
-      console.error('Failed to fetch resumes:', error);
-    }
+    const mockResumes: Resume[] = [
+      { id: '1', fileName: 'John_Doe_Resume.pdf',         uploadDate: '2026-02-05', status: 'enhanced',   jobTitle: 'Senior Software Engineer', enhancedUrl: '/api/resume/download/1' },
+      { id: '2', fileName: 'Resume_Latest.pdf',            uploadDate: '2026-02-04', status: 'parsed' },
+      { id: '3', fileName: 'CV_2026.pdf',                  uploadDate: '2026-02-01', status: 'processing' },
+    ];
+    setResumes(mockResumes);
+    setStats({ total: mockResumes.length, enhanced: mockResumes.filter(r => r.status === 'enhanced').length });
   };
 
-  const getStatusBadge = (status: Resume['status']) => {
-    const configs = {
-      enhanced: { label: 'Enhanced', color: 'var(--success)' },
-      parsed: { label: 'Ready to Enhance', color: 'var(--primary)' },
-      processing: { label: 'Processing...', color: 'var(--warning)' },
-      failed: { label: 'Failed', color: 'var(--danger)' }
-    };
-    
-    const config = configs[status];
+  const StatusBadge = ({ status }: { status: Resume['status'] }) => {
+    const cfg = STATUS_CONFIG[status];
     return (
-      <Badge 
-        variant="secondary" 
-        style={{ 
-          backgroundColor: `color-mix(in oklch, ${config.color}, transparent 85%)`,
-          color: config.color,
-          border: `1px solid ${config.color}`
+      <span
+        style={{
+          fontSize: '0.6875rem',
+          fontWeight: 600,
+          color: cfg.color,
+          backgroundColor: `color-mix(in oklch, ${cfg.color} 12%, transparent)`,
+          border: `1px solid ${cfg.color}`,
+          borderRadius: '999px',
+          padding: '3px 9px',
+          letterSpacing: '0.02em',
+          whiteSpace: 'nowrap',
         }}
       >
-        {config.label}
-      </Badge>
+        {cfg.label}
+      </span>
     );
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+      {/* ── Header row ── */}
+      <div
+        ref={headerRef}
+        style={{ opacity: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}
+      >
         <div>
-          <h1 className="text-4xl font-bold mb-2" style={{ color: "var(--text)" }}>
-            Welcome back, {userName}! 👋
-          </h1>
-          <p className="text-lg" style={{ color: "var(--text-muted)" }}>
-            Manage your resumes and track your AI enhancements
-          </p>
-        </div>
-        
-        <Link href="/dashboard/upload">
-          <Button 
-            size="lg" 
-            className="group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl"
-            style={{ 
-              background: "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)",
-              color: "var(--bg-light)",
-              padding: "0.75rem 2rem"
+          <h1
+            style={{
+              fontSize: 'clamp(1.375rem, 2.5vw, 1.75rem)',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2,
+              marginBottom: '6px',
             }}
           >
-            <Upload className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
-            Upload New Resume
-          </Button>
+            Welcome back, {userName}
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+            {userName}&apos;s workspace&nbsp;&middot;&nbsp;{stats.total} resume{stats.total !== 1 ? 's' : ''}&nbsp;&middot;&nbsp;{stats.enhanced} enhanced
+          </p>
+        </div>
+
+        <Link href="/dashboard/upload">
+          <FillButton
+            fillColor="var(--accent-hover)"
+            fillOpacity={0.18}
+            className="inline-flex items-center gap-2 text-sm font-medium"
+            style={{
+              backgroundColor: 'var(--accent)',
+              color: 'white',
+              borderRadius: 'var(--radius-md)',
+              padding: '10px 20px',
+            }}
+          >
+            <Upload className="h-4 w-4" />
+            Upload Resume
+          </FillButton>
         </Link>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Resumes Card */}
-        <Card className="group transition-all duration-300 hover:scale-105 hover:shadow-xl border-2" 
-          style={{ 
-            backgroundColor: "var(--bg-light)",
-            borderColor: "var(--border)",
-            background: `linear-gradient(135deg, var(--bg-light) 0%, color-mix(in oklch, var(--primary), transparent 97%) 100%)`
-          }}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  Total Resumes
-                </p>
-                <p className="text-4xl font-bold" style={{ color: "var(--primary)" }}>
-                  {stats.total}
-                </p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                  All time uploads
-                </p>
-              </div>
-              <div className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110" 
-                style={{ backgroundColor: "color-mix(in oklch, var(--primary), transparent 85%)" }}>
-                <FileText className="h-8 w-8" style={{ color: "var(--primary)" }} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* ── Recent Resumes ── */}
+      <div ref={listRef} style={{ opacity: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1rem',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Recent Resumes
+          </h2>
+          <Link href="/dashboard/history">
+            <span
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--accent-text)',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--accent)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--accent-text)'; }}
+            >
+              View all
+            </span>
+          </Link>
+        </div>
 
-        {/* Enhanced Card */}
-        <Card className="group transition-all duration-300 hover:scale-105 hover:shadow-xl border-2" 
-          style={{ 
-            backgroundColor: "var(--bg-light)",
-            borderColor: "var(--border)",
-            background: `linear-gradient(135deg, var(--bg-light) 0%, color-mix(in oklch, var(--secondary), transparent 97%) 100%)`
-          }}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  Enhanced
-                </p>
-                <p className="text-4xl font-bold" style={{ color: "var(--secondary)" }}>
-                  {stats.enhanced}
-                </p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                  AI-optimized resumes
-                </p>
-              </div>
-              <div className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110" 
-                style={{ backgroundColor: "color-mix(in oklch, var(--secondary), transparent 85%)" }}>
-                <Sparkles className="h-8 w-8" style={{ color: "var(--secondary)" }} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* This Month Card */}
-        <Card className="group transition-all duration-300 hover:scale-105 hover:shadow-xl border-2" 
-          style={{ 
-            backgroundColor: "var(--bg-light)",
-            borderColor: "var(--border)",
-            background: `linear-gradient(135deg, var(--bg-light) 0%, color-mix(in oklch, var(--success), transparent 97%) 100%)`
-          }}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium mb-1" style={{ color: "var(--text-muted)" }}>
-                  This Month
-                </p>
-                <p className="text-4xl font-bold" style={{ color: "var(--success)" }}>
-                  {stats.thisMonth}
-                </p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                  Resumes uploaded
-                </p>
-              </div>
-              <div className="p-4 rounded-2xl transition-all duration-300 group-hover:scale-110" 
-                style={{ backgroundColor: "color-mix(in oklch, var(--success), transparent 85%)" }}>
-                <TrendingUp className="h-8 w-8" style={{ color: "var(--success)" }} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Resumes Section */}
-      <Card className="border-2 overflow-hidden" 
-        style={{ 
-          backgroundColor: "var(--bg-light)",
-          borderColor: "var(--border)"
-        }}>
-        <CardHeader className="border-b-2 bg-gradient-to-r" 
-          style={{ 
-            borderColor: "var(--border)",
-            background: `linear-gradient(to right, var(--bg-light), color-mix(in oklch, var(--primary), transparent 97%))`
-          }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--text)" }}>
-                <FileText className="h-6 w-6" style={{ color: "var(--primary)" }} />
-                Recent Resumes
-              </CardTitle>
-              <CardDescription className="mt-1" style={{ color: "var(--text-muted)" }}>
-                Your recently uploaded and enhanced resumes
-              </CardDescription>
-            </div>
-            <Link href="/dashboard/history">
-              <Button variant="outline" size="sm" style={{ borderColor: "var(--primary)", color: "var(--primary)" }}>
-                View All
-              </Button>
+        {resumes.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+            }}
+          >
+            <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: 'var(--text-disabled)' }} />
+            <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '6px' }}>No resumes yet</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '20px' }}>
+              Upload your first resume to get started
+            </p>
+            <Link href="/dashboard/upload">
+              <FillButton
+                fillColor="var(--accent-hover)"
+                fillOpacity={0.18}
+                className="inline-flex items-center gap-2 text-sm font-medium"
+                style={{
+                  backgroundColor: 'var(--accent)',
+                  color: 'white',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 20px',
+                }}
+              >
+                <Upload className="h-4 w-4" />
+                Upload Your First Resume
+              </FillButton>
             </Link>
           </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          {resumes.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="mb-4 inline-block p-6 rounded-full" 
-                style={{ backgroundColor: "color-mix(in oklch, var(--primary), transparent 90%)" }}>
-                <FileText className="h-16 w-16" style={{ color: "var(--primary)" }} />
-              </div>
-              <p className="text-lg font-medium mb-2" style={{ color: "var(--text)" }}>
-                No resumes yet
-              </p>
-              <p className="mb-6" style={{ color: "var(--text-muted)" }}>
-                Upload your first resume to get started with AI enhancement
-              </p>
-              <Link href="/dashboard/upload">
-                <Button size="lg" style={{ 
-                  background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-                  color: "var(--bg-light)"
-                }}>
-                  <Upload className="h-5 w-5 mr-2" />
-                  Upload Your First Resume
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {resumes.map((resume) => (
-                <div
-                  key={resume.id}
-                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-2"
-                  style={{ 
-                    backgroundColor: "var(--bg)",
-                    borderColor: "var(--border)"
-                  }}
-                >
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="p-3 rounded-xl transition-all duration-300 group-hover:scale-110" 
-                      style={{ 
-                        backgroundColor: "color-mix(in oklch, var(--primary), transparent 85%)",
-                        border: "1px solid var(--primary)"
-                      }}>
-                      <FileText className="h-6 w-6" style={{ color: "var(--primary)" }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg mb-1 truncate" style={{ color: "var(--text)" }}>
-                        {resume.fileName}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
-                        <span>{new Date(resume.uploadDate).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}</span>
-                        {resume.jobTitle && (
-                          <>
-                            <span>•</span>
-                            <span className="truncate">{resume.jobTitle}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {getStatusBadge(resume.status)}
-
-                    {resume.status === 'enhanced' && (
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="gap-2" 
-                          style={{ borderColor: "var(--border)", color: "var(--text)" }}>
-                          <Eye className="h-4 w-4" />
-                          View
-                        </Button>
-                        <Button size="sm" className="gap-2" style={{ 
-                          background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-                          color: "var(--bg-light)"
-                        }}>
-                          <Download className="h-4 w-4" />
-                          Download
-                        </Button>
-                      </div>
-                    )}
-
-                    {resume.status === 'parsed' && (
-                      <Link href={`/dashboard/upload?resumeId=${resume.id}`}>
-                        <Button size="sm" style={{ 
-                          background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-                          color: "var(--bg-light)"
-                        }}>
-                          <Sparkles className="h-4 w-4 mr-1" />
-                          Enhance
-                        </Button>
-                      </Link>
-                    )}
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {resumes.map((resume) => (
+              <div
+                key={resume.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '16px 20px',
+                }}
+              >
+                {/* File info */}
+                <div className="flex items-center gap-12 flex-1 min-w-0">
+                  <FileText className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <div className="min-w-0">
+                    <p
+                      className="truncate"
+                      style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '0.9375rem', marginBottom: '2px' }}
+                    >
+                      {resume.fileName}
+                    </p>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                      {new Date(resume.uploadDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {resume.jobTitle && <> &middot; {resume.jobTitle}</>}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <StatusBadge status={resume.status} />
+
+                  {resume.status === 'enhanced' && (
+                    <div className="flex gap-2">
+                      <FillButton
+                        fillColor="var(--accent-subtle)"
+                        fillOpacity={1}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium"
+                        style={{
+                          backgroundColor: 'transparent',
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '7px 13px',
+                        }}
+                      >
+                        <Eye className="h-3.5 w-3.5" /> View
+                      </FillButton>
+                      <FillButton
+                        fillColor="var(--accent-hover)"
+                        fillOpacity={0.18}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium"
+                        style={{
+                          backgroundColor: 'var(--accent)',
+                          color: 'white',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '7px 13px',
+                        }}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </FillButton>
+                    </div>
+                  )}
+
+                  {resume.status === 'parsed' && (
+                    <Link href={`/dashboard/upload?resumeId=${resume.id}`}>
+                      <FillButton
+                        fillColor="var(--accent-hover)"
+                        fillOpacity={0.18}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium"
+                        style={{
+                          backgroundColor: 'var(--accent)',
+                          color: 'white',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '7px 13px',
+                        }}
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> Enhance
+                      </FillButton>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

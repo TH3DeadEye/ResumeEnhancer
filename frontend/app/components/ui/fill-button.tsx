@@ -3,51 +3,53 @@
 /**
  * FillButton — directional wipe fill on hover.
  *
- * On mouseenter: detect which side the cursor enters from, then use GSAP to
- * sweep a fill div from that side across the button.
- * On mouseleave: sweep the fill div back out from the exit side.
+ * On mouseenter: detect which side the cursor enters from, sweep a fill
+ * overlay from that side. On mouseleave: sweep it back out from the exit side.
  *
  * Props:
- *   fillColor   — background of the fill overlay (defaults to var(--accent-hover))
- *   as          — render as "button" (default) or "a"
- *   All standard HTMLButtonElement / HTMLAnchorElement attributes are forwarded.
+ *   fillColor   — background of the fill overlay
+ *   fillOpacity — max opacity of the overlay (0.18 for dark/accent buttons,
+ *                 1.0 for outlined buttons using var(--accent-subtle))
  */
 
 import { useRef } from "react";
 import { gsap } from "@/app/lib/gsap";
 
-// ── Direction helper ─────────────────────────────────────────────────────────
+// ── Direction helper (0-1 coordinate space, 4-triangle method) ───────────────
 
 function getSideOffset(
   e: React.MouseEvent,
   el: HTMLElement
 ): { x: string; y: string } {
   const rect = el.getBoundingClientRect();
-  const relX  = (e.clientX - rect.left)  / rect.width  - 0.5; // −0.5 … +0.5
-  const relY  = (e.clientY - rect.top)   / rect.height - 0.5; // −0.5 … +0.5
+  const relX  = (e.clientX - rect.left)  / rect.width;   // 0 … 1
+  const relY  = (e.clientY - rect.top)   / rect.height;  // 0 … 1
 
-  if (Math.abs(relX) >= Math.abs(relY)) {
-    return relX >= 0 ? { x: "100%", y: "0%" } : { x: "-100%", y: "0%" };
-  }
-  return relY >= 0 ? { x: "0%", y: "100%" } : { x: "0%", y: "-100%" };
+  if (relX > relY && relX > 1 - relY) return { x: "100%",  y: "0%"   }; // right
+  if (relX < relY && relX < 1 - relY) return { x: "-100%", y: "0%"   }; // left
+  if (relY < relX && relY < 1 - relX) return { x: "0%",    y: "-100%" }; // top
+  return                                      { x: "0%",    y: "100%"  }; // bottom
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface FillButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  fillColor?: string;
-  children: React.ReactNode;
+  fillColor?:   string;
+  fillOpacity?: number;
+  children:     React.ReactNode;
 }
 
 interface FillLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  fillColor?: string;
-  children: React.ReactNode;
+  fillColor?:   string;
+  fillOpacity?: number;
+  children:     React.ReactNode;
 }
 
 // ── FillButton ────────────────────────────────────────────────────────────────
 
 export function FillButton({
-  fillColor = "var(--accent-hover)",
+  fillColor   = "var(--accent-hover)",
+  fillOpacity = 0.18,
   style,
   className,
   children,
@@ -60,8 +62,8 @@ export function FillButton({
     if (fillRef.current) {
       gsap.fromTo(
         fillRef.current,
-        { x, y, opacity: 1 },
-        { x: "0%", y: "0%", duration: 0.3, ease: "power2.out" }
+        { x, y, opacity: 0 },
+        { x: "0%", y: "0%", opacity: fillOpacity, duration: 0.25, ease: "power2.out" }
       );
     }
   };
@@ -70,10 +72,7 @@ export function FillButton({
     const { x, y } = getSideOffset(e, e.currentTarget);
     if (fillRef.current) {
       gsap.to(fillRef.current, {
-        x,
-        y,
-        duration: 0.25,
-        ease: "power2.in",
+        x, y, opacity: 0, duration: 0.25, ease: "power2.in",
         onComplete: () => {
           if (fillRef.current) gsap.set(fillRef.current, { x: "0%", y: "0%", opacity: 0 });
         },
@@ -89,7 +88,6 @@ export function FillButton({
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      {/* Fill overlay */}
       <div
         ref={fillRef}
         aria-hidden="true"
@@ -100,10 +98,8 @@ export function FillButton({
           opacity: 0,
           pointerEvents: "none",
           zIndex: 0,
-          transform: "translateX(100%)",
         }}
       />
-      {/* Content sits above fill */}
       <span
         style={{
           position: "relative",
@@ -122,7 +118,8 @@ export function FillButton({
 // ── FillLink ──────────────────────────────────────────────────────────────────
 
 export function FillLink({
-  fillColor = "var(--accent-subtle)",
+  fillColor   = "var(--accent-subtle)",
+  fillOpacity = 1,
   style,
   className,
   children,
@@ -135,8 +132,8 @@ export function FillLink({
     if (fillRef.current) {
       gsap.fromTo(
         fillRef.current,
-        { x, y, opacity: 1 },
-        { x: "0%", y: "0%", duration: 0.3, ease: "power2.out" }
+        { x, y, opacity: 0 },
+        { x: "0%", y: "0%", opacity: fillOpacity, duration: 0.25, ease: "power2.out" }
       );
     }
   };
@@ -145,10 +142,7 @@ export function FillLink({
     const { x, y } = getSideOffset(e, e.currentTarget);
     if (fillRef.current) {
       gsap.to(fillRef.current, {
-        x,
-        y,
-        duration: 0.25,
-        ease: "power2.in",
+        x, y, opacity: 0, duration: 0.25, ease: "power2.in",
         onComplete: () => {
           if (fillRef.current) gsap.set(fillRef.current, { x: "0%", y: "0%", opacity: 0 });
         },
@@ -174,7 +168,6 @@ export function FillLink({
           opacity: 0,
           pointerEvents: "none",
           zIndex: 0,
-          transform: "translateX(100%)",
         }}
       />
       <span

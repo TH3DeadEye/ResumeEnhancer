@@ -259,6 +259,8 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             <FillButton
               onClick={() => onNavigate("signin")}
               className="nav-menu-item text-sm font-medium"
+              fillColor="var(--accent-hover)"
+              fillOpacity={0.18}
               style={{
                 backgroundColor: "var(--accent)",
                 color: "white",
@@ -340,6 +342,8 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
               <FillButton
                 onClick={() => onNavigate("signin")}
                 className="mobile-menu-item block w-full text-center py-3 px-4 text-sm font-medium mt-2 touch-manipulation"
+                fillColor="var(--accent-hover)"
+                fillOpacity={0.18}
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "white",

@@ -48,28 +48,37 @@ export default function DashboardLayout({
           }}
         >
           <div
-            className="flex items-center justify-between h-full"
+            className="relative flex items-center justify-between h-full"
             style={{ padding: '0 24px' }}
           >
             {/* LEFT — wordmark */}
             <span
               className="tracking-tight"
-              style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '1.125rem' }}
+              style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.125rem' }}
             >
               Resumence
             </span>
 
-            {/* CENTER — tab links */}
-            <nav className="hidden sm:flex items-center h-full" style={{ gap: '4px' }}>
+            {/* CENTER — absolutely positioned for true centering */}
+            <nav
+              className="hidden sm:flex items-center h-full"
+              style={{
+                position: 'absolute',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                gap: '4px',
+              }}
+            >
               {NAV_TABS.map(({ href, label }) => {
                 const isActive = pathname === href;
                 return (
                   <Link
                     key={href}
                     href={href}
-                    className="relative flex items-center h-full px-4 text-sm font-medium transition-colors"
+                    className="relative flex items-center h-full px-4 text-sm transition-colors"
                     style={{
                       color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                      fontWeight: isActive ? 500 : 400,
                     }}
                     onMouseEnter={(e) => {
                       if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';

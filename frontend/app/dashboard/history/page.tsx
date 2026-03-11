@@ -7,6 +7,7 @@ import { Input } from '@/app/components/ui/input';
 import { Badge } from '@/app/components/ui/badge';
 import { FileText, Download, Eye, Search, Calendar, Filter, Sparkles, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { FillButton } from '@/app/components/ui/fill-button';
 
 interface Resume {
   id: string;
@@ -259,61 +260,66 @@ export default function HistoryPage() {
                     <div className="flex gap-2">
                       {resume.status === 'enhanced' && (
                         <>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="gap-2 transition-all duration-300 hover:scale-105" 
-                            style={{ 
-                              borderColor: "var(--border)", 
-                              color: "var(--text)" 
+                          <FillButton
+                            fillColor="var(--accent-subtle)"
+                            fillOpacity={1}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium"
+                            style={{
+                              backgroundColor: 'transparent',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '7px 13px',
                             }}
                           >
-                            <Eye className="h-4 w-4" />
-                            View
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="gap-2 transition-all duration-300 hover:scale-105" 
-                            style={{ 
-                              background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-                              color: "var(--bg-light)"
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </FillButton>
+                          <FillButton
+                            fillColor="var(--accent-hover)"
+                            fillOpacity={0.18}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium"
+                            style={{
+                              backgroundColor: 'var(--accent)',
+                              color: 'white',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '7px 13px',
                             }}
                           >
-                            <Download className="h-4 w-4" />
-                            Download
-                          </Button>
+                            <Download className="h-3.5 w-3.5" /> Download
+                          </FillButton>
                         </>
                       )}
 
                       {resume.status === 'parsed' && (
                         <Link href={`/dashboard/upload?resumeId=${resume.id}`}>
-                          <Button 
-                            size="sm" 
-                            className="gap-2 transition-all duration-300 hover:scale-105" 
-                            style={{ 
-                              background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-                              color: "var(--bg-light)"
+                          <FillButton
+                            fillColor="var(--accent-hover)"
+                            fillOpacity={0.18}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium"
+                            style={{
+                              backgroundColor: 'var(--accent)',
+                              color: 'white',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '7px 13px',
                             }}
                           >
-                            <Sparkles className="h-4 w-4" />
-                            Enhance Now
-                          </Button>
+                            <Sparkles className="h-3.5 w-3.5" /> Enhance
+                          </FillButton>
                         </Link>
                       )}
 
                       {resume.status === 'processing' && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          disabled 
-                          style={{ 
-                            borderColor: "var(--border)", 
-                            color: "var(--text-muted)" 
+                        <span
+                          className="inline-flex items-center gap-1.5 text-xs font-medium"
+                          style={{
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '7px 13px',
                           }}
                         >
-                          <Clock className="h-4 w-4 animate-spin mr-2" />
-                          Processing
-                        </Button>
+                          <Clock className="h-3.5 w-3.5 animate-spin" /> Processing
+                        </span>
                       )}
                     </div>
                   </div>

@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "About",    href: "#about"    },
   { label: "Contact",  href: "#contact"  },
-  { label: "Sign In",  href: "#signin"   },
+  { label: "Sign In",  href: "/signin"   },
 ];
 
 export function LandingFooter() {
