@@ -1,26 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ThemeToggle } from "./theme-toggle";
-
-/**
- * NAVIGATION COMPONENT
- * 
- * Enhanced sticky navigation bar featuring:
- * - Scroll progress indicator
- * - Logo animation on scroll
- * - Menu item hover effects
- * - Mobile menu slide animation
- * - Background blur on scroll
- * - Active section highlighting
- */
-
-// Register GSAP ScrollTrigger
-gsap.registerPlugin(ScrollTrigger);
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
+import { FillButton } from "./ui/fill-button";
 
 interface NavigationProps {
   onNavigate: (page: string) => void;
@@ -28,41 +11,30 @@ interface NavigationProps {
 }
 
 export function Navigation({ onNavigate, currentPage }: NavigationProps) {
-  // ============================================================
-  // STATE & REFS
-  // ============================================================
-  
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
-  
+
   const navRef = useRef<HTMLElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // ============================================================
-  // SCROLL DETECTION & PROGRESS
-  // ============================================================
-  
+  // ── Scroll detection & progress ──────────────────────────────────────────
+
   useEffect(() => {
     const handleScroll = () => {
-      const scrolled = window.scrollY > 50;
-      setIsScrolled(scrolled);
-
-      // Update scroll progress bar
-      const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const windowHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       const scrollProgress = (window.scrollY / windowHeight) * 100;
-      
+
       if (progressBarRef.current) {
         gsap.to(progressBarRef.current, {
           width: `${scrollProgress}%`,
           duration: 0.2,
-          ease: "none"
+          ease: "none",
         });
       }
 
-      // Detect active section
       if (currentPage === "landing") {
         const sections = ["home", "features", "about", "contact"];
         for (const section of sections) {
@@ -82,35 +54,16 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [currentPage]);
 
-  // ============================================================
-  // ENTRANCE ANIMATION
-  // ============================================================
-  
+  // ── Entrance animation ────────────────────────────────────────────────────
+
   useEffect(() => {
     if (navRef.current) {
-      // Navbar slides down from top
       gsap.fromTo(
         navRef.current,
         { y: -100, opacity: 0 },
         { y: 0, opacity: 1, duration: 1, ease: "power3.out" }
       );
 
-      // Logo pulse animation
-      if (logoRef.current) {
-        gsap.fromTo(
-          logoRef.current,
-          { scale: 0, rotation: -180 },
-          { 
-            scale: 1, 
-            rotation: 0, 
-            duration: 0.8, 
-            ease: "elastic.out(1, 0.5)",
-            delay: 0.3
-          }
-        );
-      }
-
-      // Stagger menu items
       const menuItems = navRef.current.querySelectorAll(".nav-menu-item");
       if (menuItems.length > 0) {
         gsap.fromTo(
@@ -122,54 +75,63 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             duration: 0.6,
             stagger: 0.1,
             ease: "power2.out",
-            delay: 0.5
+            delay: 0.5,
           }
         );
       }
     }
   }, []);
 
-  // ============================================================
-  // LOGO SCALE ANIMATION ON SCROLL (removed rotation to prevent flipping)
-  // ============================================================
-  
-  useEffect(() => {
-    if (logoRef.current) {
-      // Subtle pulse on scroll instead of rotation
-      gsap.to(logoRef.current, {
-        scale: 1.1,
-        scrollTrigger: {
-          trigger: "body",
-          start: "top top",
-          end: "100px",
-          scrub: 1,
-          toggleActions: "play none none reverse"
-        }
-      });
-    }
-  }, []);
+  // ── Logo morph scroll animation ───────────────────────────────────────────
+  // hero-wordmark (#hero-wordmark) fades out as user scrolls;
+  // nav-wordmark (#nav-wordmark) fades in, creating the illusion of morphing.
 
-  // ============================================================
-  // MOBILE MENU ANIMATION
-  // ============================================================
-  
+  useEffect(() => {
+    if (currentPage !== "landing") return;
+
+    const ctx = gsap.context(() => {
+      const heroWordmark = document.getElementById("hero-wordmark");
+      const navWordmark  = document.getElementById("nav-wordmark");
+
+      if (!heroWordmark || !navWordmark) return;
+
+      const triggerConfig: ScrollTrigger.Vars = {
+        trigger: "#home",
+        start: "top top",
+        end: "+=200",
+        scrub: true,
+      };
+
+      // Hero wordmark: fade out + subtle scale down
+      gsap.fromTo(
+        heroWordmark,
+        { opacity: 1, scale: 1 },
+        { opacity: 0, scale: 0.92, ease: "none", scrollTrigger: triggerConfig }
+      );
+
+      // Nav wordmark: fade in + scale from slightly large to 1
+      gsap.fromTo(
+        navWordmark,
+        { opacity: 0, scale: 1.35 },
+        { opacity: 1, scale: 1, ease: "none", scrollTrigger: triggerConfig }
+      );
+    });
+
+    return () => ctx.revert();
+  }, [currentPage]);
+
+  // ── Mobile menu animation ─────────────────────────────────────────────────
+
   useEffect(() => {
     if (mobileMenuRef.current) {
       if (isMobileMenuOpen) {
-        // Slide in animation
         gsap.fromTo(
           mobileMenuRef.current,
           { height: 0, opacity: 0 },
-          { 
-            height: "auto", 
-            opacity: 1, 
-            duration: 0.4, 
-            ease: "power2.out" 
-          }
+          { height: "auto", opacity: 1, duration: 0.4, ease: "power2.out" }
         );
-
-        // Stagger menu items
-        const items = mobileMenuRef.current.querySelectorAll(".mobile-menu-item");
+        const items =
+          mobileMenuRef.current.querySelectorAll(".mobile-menu-item");
         gsap.fromTo(
           Array.from(items),
           { x: -30, opacity: 0 },
@@ -179,25 +141,22 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             duration: 0.3,
             stagger: 0.08,
             ease: "power2.out",
-            delay: 0.1
+            delay: 0.1,
           }
         );
       } else {
-        // Slide out animation
         gsap.to(mobileMenuRef.current, {
           height: 0,
           opacity: 0,
           duration: 0.3,
-          ease: "power2.in"
+          ease: "power2.in",
         });
       }
     }
   }, [isMobileMenuOpen]);
 
-  // ============================================================
-  // SMOOTH SCROLL FUNCTION
-  // ============================================================
-  
+  // ── Smooth scroll ─────────────────────────────────────────────────────────
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -206,58 +165,46 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
     }
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-  
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <nav
       ref={navRef}
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md shadow-lg"
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        backgroundColor: isScrolled 
-          ? "color-mix(in oklch, var(--bg), transparent 5%)"
-          : "color-mix(in oklch, var(--bg), transparent 10%)"
+        backgroundColor: "var(--bg-surface)",
+        borderBottom: "1px solid var(--border)",
+        backdropFilter: "blur(10px)",
       }}
     >
-      {/* Scroll Progress Bar - Enhanced visibility */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-transparent">
+      {/* Scroll progress bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px]">
         <div
           ref={progressBarRef}
-          className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 shadow-lg"
-          style={{ width: "0%", boxShadow: "0 0 10px rgba(147, 51, 234, 0.5)" }}
-        ></div>
+          className="h-full"
+          style={{ width: "0%", backgroundColor: "var(--accent)" }}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 md:h-20">
-          
-          {/* ============================================================ */}
-          {/* LOGO - Animated scale on scroll */}
-          {/* ============================================================ */}
+        <div className="flex justify-between items-center h-16">
+
+          {/* Logo */}
           <div
-            className="flex items-center cursor-pointer"
+            ref={logoRef}
+            className="cursor-pointer select-none"
             onClick={() => onNavigate("landing")}
           >
-            <div className="flex items-center gap-2">
-              <div 
-                ref={logoRef}
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ 
-                  background: "linear-gradient(to bottom right, var(--primary), var(--secondary))"
-                }}
-              >
-                <span className="font-bold text-lg" style={{ color: "var(--bg-light)" }}>AI</span>
-              </div>
-              <span className="text-xl font-bold" style={{ color: "var(--text)" }}>
-                Resume Enhancer
-              </span>
-            </div>
+            <span
+              id="nav-wordmark"
+              className="text-xl tracking-tight"
+              style={{ color: "var(--text-primary)", fontWeight: 600, opacity: 0 }}
+            >
+              Resumence
+            </span>
           </div>
 
-          {/* ============================================================ */}
-          {/* DESKTOP NAVIGATION - With active section highlighting */}
-          {/* ============================================================ */}
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
             {currentPage === "landing" ? (
               <>
@@ -265,21 +212,30 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
                   <button
                     key={section}
                     onClick={() => scrollToSection(section)}
-                    className="nav-menu-item transition-all duration-300 relative"
-                    style={{ 
-                      color: activeSection === section ? "var(--primary)" : "var(--text)",
-                      fontWeight: activeSection === section ? 600 : 400
+                    className="nav-menu-item relative text-sm transition-colors duration-200"
+                    style={{
+                      color:
+                        activeSection === section
+                          ? "var(--text-primary)"
+                          : "var(--text-secondary)",
+                      fontWeight: activeSection === section ? 500 : 400,
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "var(--text-primary)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color =
+                        activeSection === section
+                          ? "var(--text-primary)"
+                          : "var(--text-secondary)")
+                    }
                   >
                     {section.charAt(0).toUpperCase() + section.slice(1)}
-                    {/* Active indicator */}
                     {activeSection === section && (
-                      <span 
-                        className="absolute -bottom-1 left-0 right-0 h-0.5"
-                        style={{ 
-                          background: "linear-gradient(to right, var(--primary), var(--secondary))"
-                        }}
-                      ></span>
+                      <span
+                        className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full"
+                        style={{ backgroundColor: "var(--accent)" }}
+                      />
                     )}
                   </button>
                 ))}
@@ -287,72 +243,84 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
             ) : (
               <button
                 onClick={() => onNavigate("landing")}
-                className="nav-menu-item text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="nav-menu-item text-sm transition-colors duration-200"
+                style={{ color: "var(--text-secondary)" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "var(--text-primary)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "var(--text-secondary)")
+                }
               >
                 Back to Home
               </button>
             )}
-            
-            <Button
+
+            <FillButton
               onClick={() => onNavigate("signin")}
-              className="nav-menu-item"
-              style={{ 
-                background: "linear-gradient(to right, var(--primary), var(--secondary))",
-                color: "var(--bg-light)"
+              className="nav-menu-item text-sm font-medium"
+              style={{
+                backgroundColor: "var(--accent)",
+                color: "white",
+                borderRadius: "var(--radius-md)",
+                padding: "10px 20px",
               }}
             >
               Sign In
-            </Button>
-            
-            <ThemeToggle />
+            </FillButton>
           </div>
 
-          {/* ============================================================ */}
-          {/* MOBILE MENU BUTTON */}
-          {/* ============================================================ */}
-          <div className="flex items-center gap-3 md:hidden">
-            <ThemeToggle />
+          {/* Mobile hamburger */}
+          <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="relative z-50 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
+              className="relative z-50 p-2 rounded-lg transition-colors touch-manipulation"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
-              style={{ 
-                color: "var(--text)",
+              style={{
+                color: "var(--text-primary)",
                 minWidth: "44px",
-                minHeight: "44px"
+                minHeight: "44px",
               }}
             >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* MOBILE MENU DROPDOWN - Animated slide */}
-        {/* ============================================================ */}
+        {/* Mobile dropdown */}
         {isMobileMenuOpen && (
-          <div 
+          <div
             ref={mobileMenuRef}
             className="md:hidden border-t overflow-hidden"
             style={{
-              backgroundColor: "var(--bg-light)",
-              borderColor: "var(--border)"
+              backgroundColor: "var(--bg-surface)",
+              borderColor: "var(--border)",
             }}
           >
-            <div className="px-4 py-6 space-y-3">
+            <div className="px-4 py-5 space-y-1">
               {currentPage === "landing" ? (
                 <>
                   {["home", "features", "about", "contact"].map((section) => (
                     <button
                       key={section}
                       onClick={() => scrollToSection(section)}
-                      className="mobile-menu-item block w-full text-left py-3 px-4 rounded-lg transition-all touch-manipulation"
+                      className="mobile-menu-item block w-full text-left py-3 px-4 rounded-lg text-sm transition-all touch-manipulation"
                       style={{
-                        color: activeSection === section ? "var(--primary)" : "var(--text)",
-                        backgroundColor: activeSection === section ? "color-mix(in oklch, var(--primary), transparent 90%)" : "transparent",
-                        fontWeight: activeSection === section ? 600 : 400,
-                        minHeight: "44px"
+                        color:
+                          activeSection === section
+                            ? "var(--text-primary)"
+                            : "var(--text-secondary)",
+                        backgroundColor:
+                          activeSection === section
+                            ? "var(--accent-subtle)"
+                            : "transparent",
+                        fontWeight: activeSection === section ? 500 : 400,
+                        minHeight: "44px",
                       }}
                     >
                       {section.charAt(0).toUpperCase() + section.slice(1)}
@@ -362,27 +330,25 @@ export function Navigation({ onNavigate, currentPage }: NavigationProps) {
               ) : (
                 <button
                   onClick={() => onNavigate("landing")}
-                  className="mobile-menu-item block w-full text-left py-3 px-4 rounded-lg transition-all touch-manipulation"
-                  style={{
-                    color: "var(--text)",
-                    minHeight: "44px"
-                  }}
+                  className="mobile-menu-item block w-full text-left py-3 px-4 rounded-lg text-sm"
+                  style={{ color: "var(--text-secondary)", minHeight: "44px" }}
                 >
                   Back to Home
                 </button>
               )}
-              
-              <Button
+
+              <FillButton
                 onClick={() => onNavigate("signin")}
-                className="mobile-menu-item w-full text-base py-6 touch-manipulation"
-                style={{ 
-                  background: "linear-gradient(to right, var(--primary), var(--secondary))",
-                  color: "var(--bg-light)",
-                  minHeight: "44px"
+                className="mobile-menu-item block w-full text-center py-3 px-4 text-sm font-medium mt-2 touch-manipulation"
+                style={{
+                  backgroundColor: "var(--accent)",
+                  color: "white",
+                  borderRadius: "var(--radius-md)",
+                  minHeight: "44px",
                 }}
               >
                 Sign In
-              </Button>
+              </FillButton>
             </div>
           </div>
         )}

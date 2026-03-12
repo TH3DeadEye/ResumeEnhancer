@@ -1,390 +1,692 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { Button } from "./ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { ArrowRight } from "lucide-react";
+import { gsap, SplitText, ScrambleTextPlugin } from "@/app/lib/gsap";
 
-/**
- * HERO SECTION COMPONENT
- * 
- * Enhanced main landing section featuring:
- * - Staggered entrance animations for content
- * - Parallax scrolling background blobs
- * - Animated statistics with bounce effect
- * - Hover micro-interactions
- * - Floating badge animation
- */
+// ── Score milestones indexed by hoveredChips.size ────────────────────────────
+const MILESTONES = [47, 71, 88, 100];
 
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger);
+// ── Resting widths for each experience bar ───────────────────────────────────
+const LINE_ORIGINAL_WIDTHS = ["85%", "70%", "60%"] as const;
+
+// ── Label text per chip ───────────────────────────────────────────────────────
+const CHIP_LABELS = ["AWS", "React", "TypeScript"] as const;
 
 interface HeroSectionProps {
-  onGetStarted: () => void; // Function to call when "Get Started" button is clicked
+  onGetStarted: () => void;
 }
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
-  // ============================================================
-  // REFS - DOM element references for GSAP animations
-  // ============================================================
-  
-  const heroRef = useRef<HTMLElement>(null);           // Entire hero section
-  const titleRef = useRef<HTMLHeadingElement>(null);   // Main heading
-  const subtitleRef = useRef<HTMLParagraphElement>(null); // Subtitle text
-  const buttonsRef = useRef<HTMLDivElement>(null);     // Button container
-  const badgeRef = useRef<HTMLDivElement>(null);       // AWS Bedrock badge
-  const statsContainerRef = useRef<HTMLDivElement>(null); // Stats container
-  const blob1Ref = useRef<HTMLDivElement>(null);       // Background blob 1
-  const blob2Ref = useRef<HTMLDivElement>(null);       // Background blob 2
-  const blob3Ref = useRef<HTMLDivElement>(null);       // Background blob 3
 
-  // ============================================================
-  // STATE - Animated counter values
-  // ============================================================
-  
-  const [stat1, setStat1] = useState(0);   // 0 → 30 seconds
-  const [stat2, setStat2] = useState(0);   // 0 → 99.9%
-  const [stat3, setStat3] = useState(0);   // 0 → 100%
+  // ── Refs ──────────────────────────────────────────────────────────────────
 
-  // ============================================================
-  // ENTRANCE & SCROLL ANIMATIONS
-  // ============================================================
-  
+  const sectionRef    = useRef<HTMLElement>(null);
+  const titleRef      = useRef<HTMLHeadingElement>(null);
+  const firstLineRef  = useRef<HTMLSpanElement>(null);
+  const secondLineRef = useRef<HTMLElement>(null);
+  const subtitleRef   = useRef<HTMLParagraphElement>(null);
+  const buttonsRef    = useRef<HTMLDivElement>(null);
+  const statsRef      = useRef<HTMLDivElement>(null);
+
+  // Card refs
+  const cardRef    = useRef<HTMLDivElement>(null); // entrance + 3D tilt
+  const badgeRef   = useRef<HTMLDivElement>(null); // ATS badge parallax
+  const nameBarRef = useRef<HTMLDivElement>(null); // decorative name bar
+
+  // Chip refs
+  const chip0Ref = useRef<HTMLDivElement>(null);
+  const chip1Ref = useRef<HTMLDivElement>(null);
+  const chip2Ref = useRef<HTMLDivElement>(null);
+
+  // Experience bar refs
+  const line0Ref = useRef<HTMLDivElement>(null);
+  const line1Ref = useRef<HTMLDivElement>(null);
+  const line2Ref = useRef<HTMLDivElement>(null);
+
+  // Floating label refs (one per bar)
+  const label0Ref = useRef<HTMLSpanElement>(null);
+  const label1Ref = useRef<HTMLSpanElement>(null);
+  const label2Ref = useRef<HTMLSpanElement>(null);
+
+  // Internal trackers
+  const atsScoreRef        = useRef(0);
+  const hoverScoreRef      = useRef<gsap.core.Tween | null>(null);
+  const hoveredChipsSetRef = useRef<Set<number>>(new Set());
+  // Shared leave debounce — prevents score dropping on fast chip-to-chip slides
+  const leaveTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── State ─────────────────────────────────────────────────────────────────
+
+  const [stat1, setStat1] = useState(0);
+  const [stat2, setStat2] = useState(0);
+  const [stat3, setStat3] = useState(0);
+  const [atsScore, setAtsScore] = useState(0);
+
+  // ── Entrance & counter animations ─────────────────────────────────────────
+
   useEffect(() => {
     const ctx = gsap.context(() => {
-      
-      // Main timeline for coordinated entrance animations
-      const mainTimeline = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 1: Floating Badge
-      // ──────────────────────────────────────────────────────────
-      mainTimeline.fromTo(
-        badgeRef.current,
-        { y: -30, opacity: 0, scale: 0.8 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          scale: 1, 
-          duration: 0.6,
-          clearProps: "transform" // Allow continuous floating after entrance
-        }
-      );
-
-      // Continuous floating animation for badge
-      gsap.to(badgeRef.current, {
-        y: -10,
-        duration: 2,
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true
+      // 0. Hard-reset bars to default gray state (handles hot-reload / remount
+      //    after a hover session that left bars blue)
+      const bars = [line0Ref.current, line1Ref.current, line2Ref.current].filter(Boolean);
+      gsap.set(bars, {
+        backgroundColor: "var(--bg-sunken)",
+        width: (i: number) => LINE_ORIGINAL_WIDTHS[i],
       });
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 2: Main Title with 3D rotation reveal
-      // ──────────────────────────────────────────────────────────
-      mainTimeline.fromTo(
-        titleRef.current,
-        { y: 60, opacity: 0, rotateX: -15 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          rotateX: 0,
-          duration: 1.2,
-          ease: "back.out(1.2)"
-        },
-        "-=0.3"
-      );
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 3: Subtitle with blur effect
-      // ──────────────────────────────────────────────────────────
-      mainTimeline.fromTo(
+      // 1. Peripheral entrance
+      const peripheralElements = [
         subtitleRef.current,
-        { y: 40, opacity: 0, filter: "blur(10px)" },
-        { 
-          y: 0, 
-          opacity: 1, 
-          filter: "blur(0px)",
-          duration: 1,
-        },
-        "-=0.8"
+        buttonsRef.current,
+        statsRef.current,
+      ].filter(Boolean);
+      gsap.fromTo(
+        peripheralElements,
+        { opacity: 0, y: 32, filter: "blur(8px)" },
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out", stagger: 0.12 }
       );
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 4: Buttons with stagger
-      // ──────────────────────────────────────────────────────────
-      const buttons = buttonsRef.current?.children;
-      if (buttons) {
-        mainTimeline.fromTo(
-          Array.from(buttons),
-          { y: 30, opacity: 0, scale: 0.9 },
-          { 
-            y: 0, 
-            opacity: 1, 
-            scale: 1,
-            duration: 0.6,
-            stagger: 0.15, // Each button animates 0.15s after previous
-            ease: "back.out(1.5)"
-          },
-          "-=0.6"
+      // 2. ScrambleText headline
+      try {
+        const firstLine  = firstLineRef.current;
+        const secondLine = secondLineRef.current;
+        if (firstLine && secondLine) {
+          gsap.set(secondLine, { opacity: 0, filter: "blur(12px)" });
+          const tl    = gsap.timeline({ delay: 0.3 });
+          const split = new SplitText(firstLine, { type: "chars" });
+          tl.from(split.chars, {
+            duration: 1.2,
+            ease: "power2.out",
+            stagger: 0.04,
+            scrambleText: { chars: "upperCase", speed: 0.4 },
+          }, 0);
+          tl.to(secondLine, { opacity: 1, filter: "blur(0px)", duration: 0.8, ease: "power3.out" }, 1.5);
+        }
+      } catch {
+        gsap.fromTo(
+          titleRef.current,
+          { opacity: 0, y: 32, filter: "blur(8px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out", delay: 0.12 }
         );
       }
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 5: Stats with bounce entrance and stagger
-      // ──────────────────────────────────────────────────────────
-      const statCards = gsap.utils.toArray(".hero-stat-card");
-      mainTimeline.fromTo(
-        statCards,
-        { y: 50, opacity: 0, scale: 0.8, rotateY: -15 },
-        {
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          rotateY: 0,
-          duration: 0.8,
-          stagger: 0.2, // Each stat animates 0.2s after previous
-          ease: "elastic.out(1, 0.6)" // Bouncy effect
+      // 3. Stat counters
+      gsap.to({}, {
+        duration: 2.5, delay: 0.6, ease: "power2.out",
+        onUpdate: function () {
+          const p = this.progress();
+          setStat1(Math.floor(30 * p));
+          setStat2(Number((99.9 * p).toFixed(1)));
+          setStat3(Math.floor(100 * p));
         },
-        "-=0.4"
+      });
+
+      // 4. Card entrance
+      if (cardRef.current) {
+        gsap.fromTo(
+          cardRef.current,
+          { opacity: 0, x: 60, filter: "blur(8px)" },
+          { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.9, ease: "power3.out", delay: 1 }
+        );
+      }
+
+      // 5. Chip stagger
+      const chips = [chip0Ref.current, chip1Ref.current, chip2Ref.current].filter(Boolean);
+      gsap.fromTo(
+        chips,
+        { opacity: 0, scale: 0.8, y: 6 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.5)", stagger: 0.3, delay: 2.2 }
       );
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 6: Counter animation with ease
-      // ──────────────────────────────────────────────────────────
-      gsap.to({}, {
-        duration: 2.5,
-        delay: 1.2,
+      // 6. ATS score counter — settles at MILESTONES[0] = 47
+      const scoreProxy = { v: 0 };
+      gsap.to(scoreProxy, {
+        v: MILESTONES[0],
+        duration: 1.5,
+        delay: 1.3,
         ease: "power2.out",
-        onUpdate: function() {
-          const progress = this.progress();
-          
-          // Smooth counting with easing
-          setStat1(Math.floor(30 * progress));
-          setStat2(Number((99.9 * progress).toFixed(1)));
-          setStat3(Math.floor(100 * progress));
-        }
+        onUpdate: () => {
+          const val = Math.round(scoreProxy.v);
+          setAtsScore(val);
+          atsScoreRef.current = val;
+        },
+        onComplete: () => {
+          setAtsScore(MILESTONES[0]);
+          atsScoreRef.current = MILESTONES[0];
+        },
       });
+    }, sectionRef);
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 7: Parallax effect for background blobs
-      // ──────────────────────────────────────────────────────────
-      gsap.to(blob1Ref.current, {
-        y: 100,
-        x: -50,
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.5
-        }
-      });
-
-      gsap.to(blob2Ref.current, {
-        y: -80,
-        x: 60,
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 2
-        }
-      });
-
-      gsap.to(blob3Ref.current, {
-        y: 120,
-        scale: 1.2,
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 1
-        }
-      });
-
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 8: Button hover effects
-      // ──────────────────────────────────────────────────────────
-      const buttonElements = buttonsRef.current?.querySelectorAll("button");
-      buttonElements?.forEach((btn) => {
-        btn.addEventListener("mouseenter", () => {
-          gsap.to(btn, { scale: 1.05, duration: 0.3, ease: "back.out(2)" });
-        });
-        btn.addEventListener("mouseleave", () => {
-          gsap.to(btn, { scale: 1, duration: 0.3, ease: "power2.out" });
-        });
-      });
-
-    }, heroRef);
-
-    // Cleanup all animations on unmount
     return () => ctx.revert();
   }, []);
 
-  // ============================================================
-  // SMOOTH SCROLL TO CONTACT SECTION
-  // ============================================================
-  
-  const scrollToContact = () => {
-    const element = document.getElementById("contact");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+  // ── 3D tilt handlers ─────────────────────────────────────────────────────
+
+  const handleCardTilt = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const cardEl  = cardRef.current;
+    const badgeEl = badgeRef.current;
+    if (!cardEl || !badgeEl) return;
+
+    const rect = cardEl.getBoundingClientRect();
+    const rotX  = ((e.clientY - rect.top  - rect.height / 2) / rect.height) * -12;
+    const rotY  = ((e.clientX - rect.left - rect.width  / 2) / rect.width ) *  12;
+
+    gsap.to(cardEl, {
+      rotateX: rotX,
+      rotateY: rotY,
+      duration: 0.4,
+      ease: "power2.out",
+      transformPerspective: 800,
+      transformOrigin: "center center",
+    });
+
+    gsap.to(badgeEl, {
+      x: rotY * -1.5,
+      y: rotX *  1.5,
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  }, []);
+
+  // Full cleanup when mouse leaves the card container — prevents stuck state
+  // when the debounce timer is still pending as cursor exits the card.
+  const handleCardLeave = useCallback(() => {
+    const cardEl  = cardRef.current;
+    const badgeEl = badgeRef.current;
+    if (cardEl && badgeEl) {
+      gsap.to([cardEl, badgeEl], { rotateX: 0, rotateY: 0, x: 0, y: 0, duration: 0.6, ease: "power3.out" });
     }
+
+    // Cancel any pending leave debounce
+    if (leaveTimerRef.current !== null) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+
+    // Reset all chip states if any are still hovered
+    if (hoveredChipsSetRef.current.size > 0) {
+      hoveredChipsSetRef.current.clear();
+
+      const lineRefs  = [line0Ref, line1Ref, line2Ref];
+      const labelRefs = [label0Ref, label1Ref, label2Ref];
+      const chipRefs  = [chip0Ref, chip1Ref, chip2Ref];
+
+      lineRefs.forEach((ref, i) => {
+        if (ref.current) {
+          gsap.to(ref.current, { width: LINE_ORIGINAL_WIDTHS[i], backgroundColor: "var(--bg-sunken)", duration: 0.3 });
+        }
+      });
+      labelRefs.forEach(ref => {
+        if (ref.current) gsap.to(ref.current, { opacity: 0, duration: 0.15 });
+      });
+      chipRefs.forEach(ref => {
+        if (ref.current) gsap.to(ref.current, { scale: 1, duration: 0.2, ease: "power2.out" });
+      });
+
+      animateToMilestone(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Animated dot ─────────────────────────────────────────────────────────
+
+  const fireDot = useCallback((chipEl: HTMLElement, targetEl: HTMLElement) => {
+    const chipRect   = chipEl.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+
+    const dot = document.createElement("div");
+    dot.style.cssText = [
+      "position:fixed",
+      "width:6px",
+      "height:6px",
+      "border-radius:50%",
+      "background-color:var(--accent)",
+      "pointer-events:none",
+      "z-index:9999",
+      `left:${chipRect.left + chipRect.width / 2 - 3}px`,
+      `top:${chipRect.top  + chipRect.height / 2 - 3}px`,
+      "box-shadow:0 0 8px var(--accent)",
+    ].join(";");
+    document.body.appendChild(dot);
+
+    gsap.to(dot, {
+      left: targetRect.left + targetRect.width * 0.25 - 3,
+      top:  targetRect.top  + targetRect.height / 2 - 3,
+      opacity: 0,
+      duration: 0.55,
+      ease: "power2.out",
+      onComplete: () => { if (dot.parentNode) dot.parentNode.removeChild(dot); },
+    });
+  }, []);
+
+  // ── Score milestone animation ─────────────────────────────────────────────
+
+  const animateToMilestone = useCallback((numHovered: number) => {
+    const target = MILESTONES[Math.min(numHovered, MILESTONES.length - 1)];
+    hoverScoreRef.current?.kill();
+    const proxy = { v: atsScoreRef.current };
+    hoverScoreRef.current = gsap.to(proxy, {
+      v: target,
+      duration: 0.5,
+      ease: "power2.out",
+      onUpdate: () => {
+        const val = Math.round(proxy.v);
+        setAtsScore(val);
+        atsScoreRef.current = val;
+      },
+      onComplete: () => { atsScoreRef.current = target; },
+    });
+  }, []);
+
+  // ── Chip interaction ──────────────────────────────────────────────────────
+  //
+  // Enter: cancel any pending leave timer (prevents score drop on fast slides),
+  //        add chip to Set, fill bar, show label, animate score.
+  // Leave: debounce 60ms — if another chip's enter fires within the window,
+  //        the timer is cancelled and the chip stays in the Set.
+  //        If the cursor genuinely leaves, cleanup runs after 60ms.
+  //
+  // Chip → bar mapping:
+  //   AWS (0)        → line0Ref  resting 85%
+  //   React (1)      → line1Ref  resting 70%
+  //   TypeScript (2) → line2Ref  resting 60%
+
+  const onChipEnter = useCallback((chipIdx: number) => {
+    // Cancel pending leave so the Set stays populated during chip-to-chip slides
+    if (leaveTimerRef.current !== null) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+
+    hoveredChipsSetRef.current.add(chipIdx);
+
+    const chipEl = [chip0Ref, chip1Ref, chip2Ref][chipIdx]?.current;
+    if (chipEl) gsap.to(chipEl, { scale: 1.08, duration: 0.2, ease: "back.out(2)" });
+
+    const lineEl = [line0Ref, line1Ref, line2Ref][chipIdx]?.current;
+    if (lineEl) {
+      gsap.to(lineEl, {
+        width: "97%",
+        backgroundColor: "var(--accent-subtle)",
+        duration: 0.4,
+        ease: "power2.out",
+      });
+      if (chipEl) fireDot(chipEl, lineEl);
+    }
+
+    // Hide labels for other chips (user slid here — clean up stale labels)
+    [label0Ref, label1Ref, label2Ref].forEach((ref, i) => {
+      if (i !== chipIdx && ref.current) gsap.to(ref.current, { opacity: 0, duration: 0.1 });
+    });
+    // Show this chip's label
+    const labelEl = [label0Ref, label1Ref, label2Ref][chipIdx]?.current;
+    if (labelEl) {
+      gsap.fromTo(labelEl, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.2 });
+    }
+
+    animateToMilestone(hoveredChipsSetRef.current.size);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fireDot, animateToMilestone]);
+
+  const onChipLeave = useCallback((chipIdx: number) => {
+    if (leaveTimerRef.current !== null) clearTimeout(leaveTimerRef.current);
+
+    leaveTimerRef.current = setTimeout(() => {
+      leaveTimerRef.current = null;
+      hoveredChipsSetRef.current.delete(chipIdx);
+
+      const chipEl = [chip0Ref, chip1Ref, chip2Ref][chipIdx]?.current;
+      if (chipEl) gsap.to(chipEl, { scale: 1, duration: 0.2, ease: "power2.out" });
+
+      const lineEl = [line0Ref, line1Ref, line2Ref][chipIdx]?.current;
+      if (lineEl) {
+        gsap.to(lineEl, {
+          width: LINE_ORIGINAL_WIDTHS[chipIdx],
+          backgroundColor: "var(--bg-sunken)",
+          duration: 0.3,
+        });
+      }
+
+      const labelEl = [label0Ref, label1Ref, label2Ref][chipIdx]?.current;
+      if (labelEl) gsap.to(labelEl, { opacity: 0, duration: 0.15 });
+
+      animateToMilestone(hoveredChipsSetRef.current.size);
+    }, 60);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animateToMilestone]);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  const scrollToContact = () => {
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-  
+  const lineStyle = (): React.CSSProperties => ({
+    height: "10px",
+    borderRadius: "var(--radius-sm)",
+    backgroundColor: "var(--bg-sunken)",
+    pointerEvents: "none",
+  });
+
+  const isMaxScore = atsScore >= 100;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <section
       id="home"
-      ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{ 
-        background: "linear-gradient(to bottom right, var(--bg), var(--bg-light), var(--bg))"
+      ref={sectionRef}
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        paddingTop: "80px",
+        paddingBottom: "64px",
+        paddingLeft: "max(24px, 10%)",
+        paddingRight: "max(24px, 10%)",
+        backgroundColor: "var(--bg-base)",
+        backgroundImage: [
+          "repeating-linear-gradient(to right, var(--border) 0px, var(--border) 1px, transparent 1px, transparent 40px)",
+          "repeating-linear-gradient(to bottom, var(--border) 0px, var(--border) 1px, transparent 1px, transparent 40px)",
+        ].join(", "),
       }}
     >
-      {/* ============================================================ */}
-      {/* ANIMATED BACKGROUND BLOBS - Parallax scrolling effect */}
-      {/* ============================================================ */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Blob 1: Top-left with pulse and parallax */}
-        <div 
-          ref={blob1Ref}
-          className="absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl animate-pulse"
-          style={{ backgroundColor: "var(--primary)", opacity: 0.1 }}
-        ></div>
-        
-        {/* Blob 2: Bottom-right with delayed pulse and parallax */}
-        <div 
-          ref={blob2Ref}
-          className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse"
-          style={{ backgroundColor: "var(--secondary)", opacity: 0.1, animationDelay: "1s" }}
-        ></div>
-        
-        {/* Blob 3: Center with parallax */}
-        <div 
-          ref={blob3Ref}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-3xl"
-          style={{ backgroundColor: "var(--primary)", opacity: 0.05 }}
-        ></div>
-      </div>
+      <div
+        className="flex flex-col lg:flex-row"
+        style={{ alignItems: "center", gap: "clamp(40px, 6vw, 80px)", width: "100%" }}
+      >
 
-      {/* ============================================================ */}
-      {/* MAIN CONTENT */}
-      {/* ============================================================ */}
-      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-        
-        {/* AWS Bedrock Badge - Floating animation */}
-        <div 
-          ref={badgeRef}
-          className="inline-flex items-center gap-2 px-4 py-2 backdrop-blur-sm rounded-full mb-8 shadow-lg relative z-30"
-          style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
-        >
-          <Sparkles className="h-4 w-4" style={{ color: "var(--primary)" }} />
-          <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
-            Powered by AWS Bedrock AI
-          </span>
+        {/* ── LEFT COLUMN ──────────────────────────────────────────────── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+
+          {/* Hero wordmark — scroll-morphs into navbar */}
+          <div
+            id="hero-wordmark"
+            style={{
+              fontSize: "clamp(48px, 8vw, 96px)",
+              fontWeight: 600,
+              color: "var(--accent)",
+              letterSpacing: "-0.03em",
+              lineHeight: 1,
+              marginBottom: "clamp(24px, 3vw, 40px)",
+            }}
+          >
+            Resumence
+          </div>
+
+          {/* Headline */}
+          <h1
+            ref={titleRef}
+            style={{
+              fontSize: "clamp(2.75rem, 5.5vw, 5rem)",
+              fontWeight: 300,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.08,
+              maxWidth: "680px",
+              marginBottom: "1.5rem",
+            }}
+          >
+            <span ref={firstLineRef} style={{ color: "var(--text-primary)", display: "block" }}>
+              Your resume,
+            </span>
+            <em ref={secondLineRef} style={{ color: "var(--accent)", fontStyle: "italic", display: "block" }}>
+              reimagined.
+            </em>
+          </h1>
+
+          {/* Subtext */}
+          <p
+            ref={subtitleRef}
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "1.125rem",
+              lineHeight: 1.7,
+              maxWidth: "480px",
+              marginBottom: "2.5rem",
+            }}
+          >
+            Upload your resume. Paste a job description.
+            <br />
+            Get a tailored version in seconds — built to pass ATS filters.
+          </p>
+
+          {/* CTA buttons */}
+          <div ref={buttonsRef} className="flex flex-col sm:flex-row" style={{ gap: "12px" }}>
+            <button
+              onClick={onGetStarted}
+              className="inline-flex items-center gap-2 text-sm font-medium touch-manipulation"
+              style={{
+                backgroundColor: "var(--accent)",
+                color: "white",
+                borderRadius: "var(--radius-md)",
+                padding: "12px 28px",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              Get Started Free <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={scrollToContact}
+              className="inline-flex items-center gap-2 text-sm font-medium touch-manipulation"
+              style={{
+                backgroundColor: "transparent",
+                color: "var(--text-secondary)",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border)",
+                padding: "12px 28px",
+              }}
+            >
+              See How It Works
+            </button>
+          </div>
+
+          {/* Stat row */}
+          <div ref={statsRef} className="flex flex-wrap" style={{ gap: "40px", marginTop: "64px" }}>
+            <div>
+              <div className="font-semibold" style={{ fontSize: "2.75rem", color: "var(--accent)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                {stat1}s
+              </div>
+              <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>AI Processing Time</div>
+            </div>
+            <div>
+              <div className="font-semibold" style={{ fontSize: "2.75rem", color: "var(--accent)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                {stat2}%
+              </div>
+              <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>ATS Compatibility</div>
+            </div>
+            <div>
+              <div className="font-semibold" style={{ fontSize: "2.75rem", color: "var(--accent)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                {stat3}%
+              </div>
+              <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Secure & Private</div>
+            </div>
+          </div>
         </div>
 
-        {/* Main Title - Animated with 3D rotation */}
-        <h1
-          ref={titleRef}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 px-4"
-          style={{ 
-            background: "linear-gradient(to right, var(--primary), var(--secondary), var(--primary))",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text"
+        {/* ── RIGHT COLUMN — animated resume preview (desktop only) ────── */}
+        <div
+          className="hidden lg:flex"
+          style={{
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            perspective: "800px",
           }}
+          onMouseMove={handleCardTilt}
+          onMouseLeave={handleCardLeave}
         >
-          Transform Your Resume
-          <br />
-          Land Your Dream Job
-        </h1>
-
-        {/* Subtitle - Animated with blur effect */}
-        <p
-          ref={subtitleRef}
-          className="text-lg sm:text-xl md:text-2xl mb-10 max-w-3xl mx-auto leading-relaxed px-4"
-          style={{ color: "var(--text-muted)" }}
-        >
-          AI-powered resume tailoring that automatically optimizes your resume for any job
-          description, helping you bypass ATS filters and secure more interviews.
-        </p>
-
-        {/* Call-to-Action Buttons - Staggered animation with hover effect */}
-        <div ref={buttonsRef} className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-          <Button
-            size="lg"
-            onClick={onGetStarted}
-            className="text-base sm:text-lg px-6 sm:px-8 py-6 shadow-xl hover:shadow-2xl transition-all touch-manipulation w-full sm:w-auto"
-            style={{ 
-              background: "linear-gradient(to right, var(--primary), var(--secondary))",
-              color: "var(--bg-light)",
-              minHeight: "48px"
-            }}
+          {/* GSAP entrance + 3D tilt target */}
+          <div
+            ref={cardRef}
+            style={{ position: "relative", opacity: 0, transformStyle: "preserve-3d" }}
           >
-            Get Started Free <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={scrollToContact}
-            className="border-2 text-base sm:text-lg px-6 sm:px-8 py-6 transition-all touch-manipulation w-full sm:w-auto"
-            style={{ 
-              borderColor: "var(--border)",
-              backgroundColor: "var(--bg-light)",
-              color: "var(--text)",
-              minHeight: "48px"
-            }}
-          >
-            Contact Us
-          </Button>
+            {/* Float wrapper — CSS animation isolated from GSAP transforms */}
+            <div style={{ animation: "float 3s ease-in-out infinite", position: "relative" }}>
+
+              {/* ATS Score badge — parallax via badgeRef */}
+              <div
+                ref={badgeRef}
+                style={{
+                  position: "absolute",
+                  top: "-18px", right: "-18px",
+                  width: "68px", height: "68px",
+                  borderRadius: "50%",
+                  backgroundColor: "var(--accent)",
+                  color: "white",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 10,
+                  boxShadow: "var(--shadow-md)",
+                  pointerEvents: "none",
+                }}
+              >
+                <span style={{ fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 }}>
+                  {atsScore}
+                </span>
+                <span style={{
+                  fontSize: "0.5rem",
+                  fontWeight: 500,
+                  opacity: 0.85,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  marginTop: "2px",
+                }}>
+                  {isMaxScore ? "ATS ✓" : "ATS"}
+                </span>
+              </div>
+
+              {/* Resume card */}
+              <div
+                style={{
+                  width: "340px",
+                  backgroundColor: "var(--bg-surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-xl)",
+                  boxShadow: "var(--shadow-lg)",
+                  padding: "32px",
+                }}
+              >
+                {/* Name bar */}
+                <div
+                  ref={nameBarRef}
+                  style={{
+                    height: "14px",
+                    width: "60%",
+                    backgroundColor: "var(--bg-sunken)",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: "10px",
+                    pointerEvents: "none",
+                  }}
+                />
+                {/* Title bar */}
+                <div style={{
+                  height: "10px",
+                  width: "40%",
+                  backgroundColor: "var(--bg-sunken)",
+                  borderRadius: "var(--radius-sm)",
+                  marginBottom: "20px",
+                  pointerEvents: "none",
+                }} />
+
+                <div style={{ height: "1px", backgroundColor: "var(--border)", marginBottom: "16px" }} />
+
+                <div style={{
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                  marginBottom: "14px",
+                }}>
+                  Experience
+                </div>
+
+                {/* Experience bars — each has a floating label above it */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
+                  {CHIP_LABELS.map((label, i) => {
+                    const lineRef  = [line0Ref,  line1Ref,  line2Ref ][i];
+                    const labelRef = [label0Ref, label1Ref, label2Ref][i];
+                    return (
+                      <div key={label} style={{ position: "relative", paddingTop: "18px" }}>
+                        {/* Floating keyword label — hidden by default, shown on chip hover */}
+                        <span
+                          ref={labelRef}
+                          style={{
+                            position: "absolute",
+                            top: "0px",
+                            left: 0,
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            letterSpacing: "0.08em",
+                            color: "var(--accent-text)",
+                            textTransform: "uppercase",
+                            opacity: 0,
+                            pointerEvents: "none",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {label}
+                        </span>
+                        {/* The bar itself — GSAP animates width + backgroundColor */}
+                        <div
+                          ref={lineRef}
+                          style={{
+                            ...lineStyle(),
+                            width: LINE_ORIGINAL_WIDTHS[i],
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ height: "1px", backgroundColor: "var(--border)", marginBottom: "16px" }} />
+
+                <div style={{
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                  marginBottom: "14px",
+                }}>
+                  Skills
+                </div>
+
+                {/* Keyword chips — interactive, cumulative score */}
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  {CHIP_LABELS.map((label, i) => (
+                    <div
+                      key={label}
+                      ref={i === 0 ? chip0Ref : i === 1 ? chip1Ref : chip2Ref}
+                      onMouseEnter={() => onChipEnter(i)}
+                      onMouseLeave={() => onChipLeave(i)}
+                      style={{
+                        backgroundColor: "var(--accent-subtle)",
+                        color: "var(--accent-text)",
+                        borderRadius: "999px",
+                        padding: "4px 10px",
+                        fontSize: "0.75rem",
+                        fontWeight: 500,
+                        opacity: 0,
+                        cursor: "default",
+                        userSelect: "none",
+                      }}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* ANIMATED STATISTICS - Staggered bounce entrance */}
-        {/* ============================================================ */}
-        <div ref={statsContainerRef} className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-4xl mx-auto px-4">
-          
-          {/* Stat 1: AI Processing Time */}
-          <div 
-            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
-            style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
-          >
-            <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: "var(--primary)" }}>
-              {stat1}s
-            </div>
-            <div className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>AI Processing Time</div>
-          </div>
-          
-          {/* Stat 2: ATS Compatibility */}
-          <div 
-            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
-            style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
-          >
-            <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: "var(--secondary)" }}>
-              {stat2}%
-            </div>
-            <div className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>ATS Compatibility</div>
-          </div>
-          
-          {/* Stat 3: Security */}
-          <div 
-            className="hero-stat-card backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow touch-manipulation"
-            style={{ backgroundColor: "color-mix(in oklch, var(--bg-light), transparent 20%)" }}
-          >
-            <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: "var(--success)" }}>
-              {stat3}%
-            </div>
-            <div className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>Secure & Private</div>
-          </div>
-        </div>
       </div>
     </section>
   );

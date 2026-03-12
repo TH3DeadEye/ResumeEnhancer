@@ -1,15 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/app/components/theme-provider';
 import { AmplifyProvider } from '@/app/components/amplify-provider';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
-  title: 'AI Resume Enhancer - Optimize Your Resume with AI',
-  description: 'AI-powered resume tailoring that automatically optimizes your resume for any job description, helping you bypass ATS filters and secure more interviews.',
-  keywords: ['AI', 'Resume', 'ATS', 'Job Application', 'AWS Bedrock', 'Resume Optimization'],
+  title: 'Resumence — AI Resume Tailoring',
+  description: 'Upload your resume, paste a job description, and let Resumence tailor it to the role in seconds.',
+  keywords: ['AI', 'Resume', 'ATS', 'Job Application', 'AWS Bedrock', 'Resumence'],
 };
 
 export default function RootLayout({
@@ -19,12 +16,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body>
         <AmplifyProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            forcedTheme="light"
             disableTransitionOnChange
           >
             {children}

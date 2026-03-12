@@ -32,12 +32,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         console.log('User authenticated, loading dashboard');
         setIsAuthed(true);
       } else {
-        console.log('Not authenticated, redirecting to home');
-        router.push('/');
+        console.log('Not authenticated, redirecting to sign in');
+        router.push('/signin');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      router.push('/');
+      router.push('/signin');
     } finally {
       setIsLoading(false);
     }
@@ -47,8 +47,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: "var(--accent)" }}></div>
+          <p style={{ color: "var(--text-muted)" }}>Checking authentication...</p>
         </div>
       </div>
     );

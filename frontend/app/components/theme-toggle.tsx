@@ -40,17 +40,17 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+      className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:scale-105"
       style={{
-        backgroundColor: "color-mix(in oklch, var(--primary), transparent 85%)",
-        border: "2px solid var(--primary)"
+        backgroundColor: "color-mix(in oklch, var(--bg-light), var(--border) 20%)",
+        border: "1px solid var(--border)"
       }}
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (
-        <Moon className="h-5 w-5" style={{ color: "var(--primary)" }} />
+        <Moon className="h-4 w-4" style={{ color: "var(--text)" }} />
       ) : (
-        <Sun className="h-5 w-5" style={{ color: "var(--primary)" }} />
+        <Sun className="h-4 w-4" style={{ color: "var(--text)" }} />
       )}
     </button>
   );

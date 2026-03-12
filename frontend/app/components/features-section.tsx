@@ -1,243 +1,207 @@
 'use client';
 
 import { useEffect, useRef } from "react";
-import { Card, CardContent } from "./ui/card";
-import { Bot, Zap, Shield, FileText, TrendingUp, Clock } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Image from "next/image";
+import { Bot, TrendingUp, Search, FileText } from "lucide-react";
 
-/**
- * FEATURES SECTION COMPONENT
- * 
- * Enhanced features display with:
- * - Staggered scroll-triggered animations
- * - 3D hover tilt and lift effects
- * - Icon rotation animations
- * - Parallax scroll effects
- * - Smooth reversible animations
- */
+import { gsap, ScrollTrigger } from "@/app/lib/gsap";
 
-// Register GSAP ScrollTrigger plugin
-gsap.registerPlugin(ScrollTrigger);
 
-// ============================================================
-// FEATURES DATA - Edit here to add/modify features
-// ============================================================
-const features = [
+// ── Feature data ──────────────────────────────────────────────────────────────
+
+const FEATURES = [
   {
-    icon: Bot,
+    Icon: Bot,
     title: "AI-Powered Tailoring",
     description:
-      "Advanced Amazon Bedrock AI analyzes job descriptions and optimizes your resume with relevant keywords and skills.",
-    color: "from-blue-500 to-cyan-500",
+      "Amazon Bedrock analyzes the job description and rewrites your resume to match — naturally, not robotically.",
+    image: "/images/features/feature-ai-tailoring.png",
   },
   {
-    icon: Zap,
-    title: "Lightning Fast",
+    Icon: TrendingUp,
+    title: "ATS Score in Seconds",
     description:
-      "Get your tailored resume in under 30 seconds. Our serverless architecture ensures instant processing.",
-    color: "from-purple-500 to-pink-500",
+      "Know exactly how your resume performs against applicant tracking systems before you apply.",
+    image: "/images/features/feature-ats-score.png",
   },
   {
-    icon: Shield,
-    title: "100% Secure",
+    Icon: Search,
+    title: "Keyword Intelligence",
     description:
-      "Your data is encrypted at rest and in transit. Built on AWS with enterprise-grade security standards.",
-    color: "from-green-500 to-emerald-500",
+      "Surface missing keywords recruiters are scanning for and see exactly where to add them.",
+    image: "/images/features/feature-keywords.png",
   },
   {
-    icon: FileText,
-    title: "PDF Support",
+    Icon: FileText,
+    title: "Instant PDF Export",
     description:
-      "Upload your resume in PDF format and download the tailored version ready to submit immediately.",
-    color: "from-orange-500 to-red-500",
-  },
-  {
-    icon: TrendingUp,
-    title: "ATS Optimization",
-    description:
-      "Bypass Applicant Tracking Systems with AI-optimized formatting and keyword placement.",
-    color: "from-indigo-500 to-blue-500",
-  },
-  {
-    icon: Clock,
-    title: "Save Hours",
-    description:
-      "Stop manually customizing resumes. Let AI do the heavy lifting while you focus on interview prep.",
-    color: "from-pink-500 to-rose-500",
+      "Download your tailored resume immediately. No accounts needed for preview — just results.",
+    image: "/images/features/feature-pdf-export.png",
   },
 ];
 
-export function FeaturesSection() {
-  // ============================================================
-  // REFS - For GSAP animations
-  // ============================================================
-  
-  const sectionRef = useRef<HTMLElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
+// ── Component ─────────────────────────────────────────────────────────────────
 
-  // ============================================================
-  // SCROLL-TRIGGERED ANIMATIONS
-  // ============================================================
-  
+export function FeaturesSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Unified animation: each row enters when it crosses 82% of viewport
   useEffect(() => {
     const ctx = gsap.context(() => {
-      
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 1: Section Title - Fade and slide from below
-      // ──────────────────────────────────────────────────────────
-      gsap.fromTo(
-        titleRef.current,
-        { y: 80, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: titleRef.current,
-            start: "top 85%",
-            end: "top 50%",
-            scrub: 1,
-            toggleActions: "play none none reverse",
-          },
-        }
-      );
+      const rows = gsap.utils.toArray<HTMLElement>(".feature-row");
 
-      // ──────────────────────────────────────────────────────────
-      // ANIMATION 2: Feature Cards - Enhanced entrance with 3D effect
-      // ──────────────────────────────────────────────────────────
-      const cards = gsap.utils.toArray(".feature-card");
-      
-      cards.forEach((card: any, index: number) => {
-        // Entrance animation - Fast and responsive
+      rows.forEach((row) => {
         gsap.fromTo(
-          card,
+          row,
+          { opacity: 0, y: 32, filter: "blur(8px)" },
           {
-            y: 60,
-            opacity: 0,
-            scale: 0.95,
-          },
-          {
-            y: 0,
             opacity: 1,
-            scale: 1,
-            duration: 0.4,
-            ease: "power2.out",
+            y: 0,
+            filter: "blur(0px)",
+            duration: 0.7,
+            ease: "power3.out",
             scrollTrigger: {
-              trigger: card,
-              start: "top 90%",
-              end: "top 60%",
+              trigger: row,
+              start: "top 82%",
               toggleActions: "play none none reverse",
             },
           }
         );
-
-        // ──────────────────────────────────────────────────────────
-        // ANIMATION 3: Simple hover interactions - Fast and smooth
-        // ──────────────────────────────────────────────────────────
-        const cardElement = card as HTMLElement;
-        const iconElement = cardElement.querySelector(".feature-icon");
-        
-        // Mouse enter - Quick lift
-        cardElement.addEventListener("mouseenter", () => {
-          gsap.to(card, {
-            y: -8,
-            scale: 1.02,
-            duration: 0.2,
-            ease: "power1.out"
-          });
-          
-          // Simple icon rotation
-          if (iconElement) {
-            gsap.to(iconElement, {
-              rotation: 360,
-              duration: 0.4,
-              ease: "power2.out"
-            });
-          }
-        });
-
-        // Mouse leave - Quick return
-        cardElement.addEventListener("mouseleave", () => {
-          gsap.to(card, {
-            y: 0,
-            scale: 1,
-            duration: 0.2,
-            ease: "power1.out"
-          });
-        });
       });
 
+      // Section header animates in independently
+      gsap.fromTo(
+        ".features-header",
+        { opacity: 0, y: 32, filter: "blur(8px)" },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".features-header",
+            start: "top 82%",
+            toggleActions: "play none none reverse",
+          },
+        }
+      );
     }, sectionRef);
 
-    // Cleanup ScrollTriggers on unmount
     return () => ctx.revert();
   }, []);
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-  
   return (
-    <section id="features" ref={sectionRef} className="py-16 sm:py-24" style={{ backgroundColor: "var(--bg)" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* ============================================================ */}
-        {/* SECTION TITLE - Animated on scroll */}
-        {/* ============================================================ */}
-        <div ref={titleRef} className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 px-4" style={{ color: "var(--text)" }}>
-            Powerful Features for Job Seekers
-          </h2>
-          <p className="text-lg sm:text-xl max-w-3xl mx-auto px-4" style={{ color: "var(--text-muted)" }}>
-            Everything you need to create perfect, tailored resumes that get noticed by recruiters
-            and pass ATS filters.
-          </p>
-        </div>
+    <section
+      id="features"
+      ref={sectionRef}
+      style={{
+        backgroundColor: "var(--bg-subtle)",
+        padding: "120px max(24px, 10%)",
+      }}
+    >
+      {/* Section header */}
+      <div className="features-header text-center mb-24">
+        <h2
+          style={{
+            color: "var(--text-primary)",
+            fontWeight: 500,
+            fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
+            letterSpacing: "-0.02em",
+            marginBottom: "0.875rem",
+          }}
+        >
+          What Resumence does
+        </h2>
+        <p
+          style={{
+            color: "var(--text-muted)",
+            fontSize: "1.0625rem",
+            maxWidth: "540px",
+            margin: "0 auto",
+            lineHeight: 1.65,
+          }}
+        >
+          Built around one idea: your resume should work for the job, not the
+          other way around.
+        </p>
+      </div>
 
-        {/* ============================================================ */}
-        {/* FEATURE CARDS GRID - Staggered animations with hover effects */}
-        {/* ============================================================ */}
-        <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            
+      {/* Alternating rows */}
+      <div style={{ maxWidth: "960px", margin: "0 auto" }}>
+        <div className="flex flex-col" style={{ gap: "80px" }}>
+          {FEATURES.map(({ Icon, title, description, image }, i) => {
+            const isEven = i % 2 === 0;
+
             return (
-              <Card
-                key={index}
-                className="feature-card border-none shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                style={{ 
-                  transformStyle: "preserve-3d",
-                  background: "linear-gradient(to bottom right, var(--bg-light), var(--bg))"
-                }}
+              <div
+                key={i}
+                className="feature-row grid grid-cols-1 lg:grid-cols-2 items-center"
+                style={{ gap: "64px" }}
               >
-                <CardContent className="p-8">
-                  {/* Icon with gradient background and rotation animation */}
+                {/* Text content */}
+                <div
+                  style={{
+                    order: isEven ? 1 : 2,
+                  }}
+                  className="lg:order-[unset]"
+                >
                   <div
-                    className="feature-icon w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
+                    className="flex items-center justify-center rounded-xl mb-6"
                     style={{
-                      background: index % 3 === 0 
-                        ? "var(--primary)" 
-                        : index % 3 === 1 
-                        ? "var(--secondary)" 
-                        : "var(--success)"
+                      backgroundColor: "var(--accent-subtle)",
+                      width: "48px",
+                      height: "48px",
                     }}
                   >
-                    <Icon className="h-8 w-8" style={{ color: "var(--bg-light)" }} />
+                    <Icon
+                      style={{ color: "var(--accent)", width: "22px", height: "22px" }}
+                    />
                   </div>
-                  
-                  {/* Feature title */}
-                  <h3 className="text-2xl font-bold mb-3" style={{ color: "var(--text)" }}>
-                    {feature.title}
+
+                  <h3
+                    style={{
+                      color: "var(--text-primary)",
+                      fontWeight: 600,
+                      fontSize: "1.375rem",
+                      letterSpacing: "-0.01em",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
+                    {title}
                   </h3>
-                  
-                  {/* Feature description */}
-                  <p className="leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                    {feature.description}
+
+                  <p
+                    style={{
+                      color: "var(--text-muted)",
+                      fontSize: "1rem",
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {description}
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Feature image */}
+                <div
+                  className="hidden lg:block"
+                  style={{
+                    order: isEven ? 2 : 1,
+                    borderRadius: "var(--radius-xl)",
+                    overflow: "hidden",
+                    height: "280px",
+                    position: "relative",
+                  }}
+                >
+                  <Image
+                    src={image}
+                    alt={title}
+                    fill
+                    style={{ objectFit: "cover" }}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                </div>
+              </div>
             );
           })}
         </div>

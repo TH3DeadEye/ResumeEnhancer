@@ -1,4 +1,4 @@
-# AI Resume Enhancer - Animation & Code Guide
+# Resumence - Animation & Code Guide
 
 ## 📚 Table of Contents
 1. [Project Structure](#project-structure)
@@ -589,6 +589,5 @@ useEffect(() => {
 
 ---
 
-**Last Updated:** February 5, 2026  
-**Project:** AI Resume Enhancer  
-**Team:** KMR (Arman Milani & Ramtin Loghmani)
+**Last Updated:** February 6, 2026  
+**Project:** Resumence
