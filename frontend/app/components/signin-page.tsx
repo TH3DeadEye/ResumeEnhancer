@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
 import { Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -581,21 +580,33 @@ export function SignInPage() {
 
                 {/* Remember me — sign-in only */}
                 {!isSignUp && (
-                  <div className="flex items-center gap-2">
-                    <Checkbox
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
                       id="rememberMe"
                       checked={formData.rememberMe}
-                      onCheckedChange={checked =>
-                        setFormData({ ...formData, rememberMe: checked as boolean })
+                      onChange={(e) =>
+                        setFormData({ ...formData, rememberMe: e.target.checked })
                       }
+                      style={{
+                        width: '14px',
+                        height: '14px',
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        accentColor: 'var(--accent)',
+                      }}
                     />
-                    <Label
+                    <label
                       htmlFor="rememberMe"
-                      className="text-sm cursor-pointer"
-                      style={{ color: 'var(--text-muted)' }}
+                      style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                      }}
                     >
                       Remember me
-                    </Label>
+                    </label>
                   </div>
                 )}
               </>

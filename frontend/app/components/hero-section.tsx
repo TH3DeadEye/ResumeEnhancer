@@ -4,11 +4,21 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ArrowRight } from "lucide-react";
 import { gsap, SplitText, ScrambleTextPlugin } from "@/app/lib/gsap";
 
+// ── Score milestones indexed by hoveredChips.size ────────────────────────────
+const MILESTONES = [47, 71, 88, 100];
+
+// ── Resting widths for each experience bar ───────────────────────────────────
+const LINE_ORIGINAL_WIDTHS = ["85%", "70%", "60%"] as const;
+
+// ── Label text per chip ───────────────────────────────────────────────────────
+const CHIP_LABELS = ["AWS", "React", "TypeScript"] as const;
+
 interface HeroSectionProps {
   onGetStarted: () => void;
 }
 
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
+
   // ── Refs ──────────────────────────────────────────────────────────────────
 
   const sectionRef    = useRef<HTMLElement>(null);
@@ -19,42 +29,59 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   const buttonsRef    = useRef<HTMLDivElement>(null);
   const statsRef      = useRef<HTMLDivElement>(null);
 
-  // Resume preview card refs
-  const cardRef  = useRef<HTMLDivElement>(null);
+  // Card refs
+  const cardRef    = useRef<HTMLDivElement>(null); // entrance + 3D tilt
+  const badgeRef   = useRef<HTMLDivElement>(null); // ATS badge parallax
+  const nameBarRef = useRef<HTMLDivElement>(null); // decorative name bar
+
+  // Chip refs
   const chip0Ref = useRef<HTMLDivElement>(null);
   const chip1Ref = useRef<HTMLDivElement>(null);
   const chip2Ref = useRef<HTMLDivElement>(null);
 
-  // Content line refs (for interactive dot target + width animation)
+  // Experience bar refs
   const line0Ref = useRef<HTMLDivElement>(null);
   const line1Ref = useRef<HTMLDivElement>(null);
   const line2Ref = useRef<HTMLDivElement>(null);
+
+  // Floating label refs (one per bar)
+  const label0Ref = useRef<HTMLSpanElement>(null);
+  const label1Ref = useRef<HTMLSpanElement>(null);
+  const label2Ref = useRef<HTMLSpanElement>(null);
+
+  // Internal trackers
+  const atsScoreRef        = useRef(0);
+  const hoverScoreRef      = useRef<gsap.core.Tween | null>(null);
+  const hoveredChipsSetRef = useRef<Set<number>>(new Set());
+  // Shared leave debounce — prevents score dropping on fast chip-to-chip slides
+  const leaveTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── State ─────────────────────────────────────────────────────────────────
 
   const [stat1, setStat1] = useState(0);
   const [stat2, setStat2] = useState(0);
   const [stat3, setStat3] = useState(0);
-  const [atsScore, setAtsScore]             = useState(0);
-  const [highlightedLine, setHighlightedLine] = useState<number | null>(null);
-  // Line widths — can expand on chip hover
-  const [lineWidths, setLineWidths]         = useState(['90%', '75%', '82%']);
-
-  // ── Internal trackers (not state — avoids stale closure issues) ────────────
-  const atsScoreRef      = useRef(0);
-  const hoverScoreRef    = useRef<gsap.core.Tween | null>(null);
+  const [atsScore, setAtsScore] = useState(0);
 
   // ── Entrance & counter animations ─────────────────────────────────────────
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // 1. Peripheral elements
+
+      // 0. Hard-reset bars to default gray state (handles hot-reload / remount
+      //    after a hover session that left bars blue)
+      const bars = [line0Ref.current, line1Ref.current, line2Ref.current].filter(Boolean);
+      gsap.set(bars, {
+        backgroundColor: "var(--bg-sunken)",
+        width: (i: number) => LINE_ORIGINAL_WIDTHS[i],
+      });
+
+      // 1. Peripheral entrance
       const peripheralElements = [
         subtitleRef.current,
         buttonsRef.current,
         statsRef.current,
       ].filter(Boolean);
-
       gsap.fromTo(
         peripheralElements,
         { opacity: 0, y: 32, filter: "blur(8px)" },
@@ -85,7 +112,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         );
       }
 
-      // 3. Hero stat counters
+      // 3. Stat counters
       gsap.to({}, {
         duration: 2.5, delay: 0.6, ease: "power2.out",
         onUpdate: function () {
@@ -96,7 +123,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         },
       });
 
-      // 4. Resume card entrance
+      // 4. Card entrance
       if (cardRef.current) {
         gsap.fromTo(
           cardRef.current,
@@ -105,7 +132,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         );
       }
 
-      // 5. Keyword chip stagger
+      // 5. Chip stagger
       const chips = [chip0Ref.current, chip1Ref.current, chip2Ref.current].filter(Boolean);
       gsap.fromTo(
         chips,
@@ -113,18 +140,21 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.5)", stagger: 0.3, delay: 2.2 }
       );
 
-      // 6. ATS score counter
+      // 6. ATS score counter — settles at MILESTONES[0] = 47
       const scoreProxy = { v: 0 };
       gsap.to(scoreProxy, {
-        v: 94, duration: 1.5, delay: 1.3, ease: "power2.out",
+        v: MILESTONES[0],
+        duration: 1.5,
+        delay: 1.3,
+        ease: "power2.out",
         onUpdate: () => {
           const val = Math.round(scoreProxy.v);
           setAtsScore(val);
           atsScoreRef.current = val;
         },
         onComplete: () => {
-          setAtsScore(94);
-          atsScoreRef.current = 94;
+          setAtsScore(MILESTONES[0]);
+          atsScoreRef.current = MILESTONES[0];
         },
       });
     }, sectionRef);
@@ -132,113 +162,200 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
     return () => ctx.revert();
   }, []);
 
-  // ── Line highlight interval ───────────────────────────────────────────────
+  // ── 3D tilt handlers ─────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const interval = setInterval(() => {
-        const idx = Math.floor(Math.random() * 3);
-        setHighlightedLine(idx);
-        setTimeout(() => setHighlightedLine(null), 500);
-      }, 1500);
-      return () => clearInterval(interval);
-    }, 2000);
-    return () => clearTimeout(t);
+  const handleCardTilt = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const cardEl  = cardRef.current;
+    const badgeEl = badgeRef.current;
+    if (!cardEl || !badgeEl) return;
+
+    const rect = cardEl.getBoundingClientRect();
+    const rotX  = ((e.clientY - rect.top  - rect.height / 2) / rect.height) * -12;
+    const rotY  = ((e.clientX - rect.left - rect.width  / 2) / rect.width ) *  12;
+
+    gsap.to(cardEl, {
+      rotateX: rotX,
+      rotateY: rotY,
+      duration: 0.4,
+      ease: "power2.out",
+      transformPerspective: 800,
+      transformOrigin: "center center",
+    });
+
+    gsap.to(badgeEl, {
+      x: rotY * -1.5,
+      y: rotX *  1.5,
+      duration: 0.4,
+      ease: "power2.out",
+    });
   }, []);
 
-  // ── Animated dot helper ───────────────────────────────────────────────────
+  // Full cleanup when mouse leaves the card container — prevents stuck state
+  // when the debounce timer is still pending as cursor exits the card.
+  const handleCardLeave = useCallback(() => {
+    const cardEl  = cardRef.current;
+    const badgeEl = badgeRef.current;
+    if (cardEl && badgeEl) {
+      gsap.to([cardEl, badgeEl], { rotateX: 0, rotateY: 0, x: 0, y: 0, duration: 0.6, ease: "power3.out" });
+    }
 
-  const fireDot = useCallback((chipEl: HTMLElement, lineEl: HTMLElement) => {
-    const chipRect = chipEl.getBoundingClientRect();
-    const lineRect = lineEl.getBoundingClientRect();
+    // Cancel any pending leave debounce
+    if (leaveTimerRef.current !== null) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
 
-    const dot = document.createElement('div');
+    // Reset all chip states if any are still hovered
+    if (hoveredChipsSetRef.current.size > 0) {
+      hoveredChipsSetRef.current.clear();
+
+      const lineRefs  = [line0Ref, line1Ref, line2Ref];
+      const labelRefs = [label0Ref, label1Ref, label2Ref];
+      const chipRefs  = [chip0Ref, chip1Ref, chip2Ref];
+
+      lineRefs.forEach((ref, i) => {
+        if (ref.current) {
+          gsap.to(ref.current, { width: LINE_ORIGINAL_WIDTHS[i], backgroundColor: "var(--bg-sunken)", duration: 0.3 });
+        }
+      });
+      labelRefs.forEach(ref => {
+        if (ref.current) gsap.to(ref.current, { opacity: 0, duration: 0.15 });
+      });
+      chipRefs.forEach(ref => {
+        if (ref.current) gsap.to(ref.current, { scale: 1, duration: 0.2, ease: "power2.out" });
+      });
+
+      animateToMilestone(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Animated dot ─────────────────────────────────────────────────────────
+
+  const fireDot = useCallback((chipEl: HTMLElement, targetEl: HTMLElement) => {
+    const chipRect   = chipEl.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+
+    const dot = document.createElement("div");
     dot.style.cssText = [
-      'position:fixed',
-      'width:6px',
-      'height:6px',
-      'border-radius:50%',
-      'background-color:var(--accent)',
-      'pointer-events:none',
-      'z-index:9999',
+      "position:fixed",
+      "width:6px",
+      "height:6px",
+      "border-radius:50%",
+      "background-color:var(--accent)",
+      "pointer-events:none",
+      "z-index:9999",
       `left:${chipRect.left + chipRect.width / 2 - 3}px`,
-      `top:${chipRect.top + chipRect.height / 2 - 3}px`,
-      'box-shadow:0 0 8px var(--accent)',
-    ].join(';');
+      `top:${chipRect.top  + chipRect.height / 2 - 3}px`,
+      "box-shadow:0 0 8px var(--accent)",
+    ].join(";");
     document.body.appendChild(dot);
 
     gsap.to(dot, {
-      left: lineRect.left + lineRect.width * 0.25 - 3,
-      top:  lineRect.top  + lineRect.height / 2 - 3,
+      left: targetRect.left + targetRect.width * 0.25 - 3,
+      top:  targetRect.top  + targetRect.height / 2 - 3,
       opacity: 0,
       duration: 0.55,
-      ease: 'power2.out',
+      ease: "power2.out",
       onComplete: () => { if (dot.parentNode) dot.parentNode.removeChild(dot); },
     });
   }, []);
 
-  // ── Interactive chip handlers ─────────────────────────────────────────────
+  // ── Score milestone animation ─────────────────────────────────────────────
 
-  const chipRefs = [chip0Ref, chip1Ref, chip2Ref];
+  const animateToMilestone = useCallback((numHovered: number) => {
+    const target = MILESTONES[Math.min(numHovered, MILESTONES.length - 1)];
+    hoverScoreRef.current?.kill();
+    const proxy = { v: atsScoreRef.current };
+    hoverScoreRef.current = gsap.to(proxy, {
+      v: target,
+      duration: 0.5,
+      ease: "power2.out",
+      onUpdate: () => {
+        const val = Math.round(proxy.v);
+        setAtsScore(val);
+        atsScoreRef.current = val;
+      },
+      onComplete: () => { atsScoreRef.current = target; },
+    });
+  }, []);
+
+  // ── Chip interaction ──────────────────────────────────────────────────────
+  //
+  // Enter: cancel any pending leave timer (prevents score drop on fast slides),
+  //        add chip to Set, fill bar, show label, animate score.
+  // Leave: debounce 60ms — if another chip's enter fires within the window,
+  //        the timer is cancelled and the chip stays in the Set.
+  //        If the cursor genuinely leaves, cleanup runs after 60ms.
+  //
+  // Chip → bar mapping:
+  //   AWS (0)        → line0Ref  resting 85%
+  //   React (1)      → line1Ref  resting 70%
+  //   TypeScript (2) → line2Ref  resting 60%
 
   const onChipEnter = useCallback((chipIdx: number) => {
-    const chipEl = chipRefs[chipIdx]?.current;
-    if (!chipEl) return;
+    // Cancel pending leave so the Set stays populated during chip-to-chip slides
+    if (leaveTimerRef.current !== null) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
 
-    const lineIdx  = chipIdx; // each chip targets the matching line
-    const lineEl   = [line0Ref, line1Ref, line2Ref][lineIdx]?.current;
+    hoveredChipsSetRef.current.add(chipIdx);
 
-    // 1. Scale chip
-    gsap.to(chipEl, { scale: 1.08, duration: 0.2, ease: 'back.out(2)' });
+    const chipEl = [chip0Ref, chip1Ref, chip2Ref][chipIdx]?.current;
+    if (chipEl) gsap.to(chipEl, { scale: 1.08, duration: 0.2, ease: "back.out(2)" });
 
-    // 2. Highlight target line
-    setHighlightedLine(lineIdx);
+    const lineEl = [line0Ref, line1Ref, line2Ref][chipIdx]?.current;
+    if (lineEl) {
+      gsap.to(lineEl, {
+        width: "97%",
+        backgroundColor: "var(--accent-subtle)",
+        duration: 0.4,
+        ease: "power2.out",
+      });
+      if (chipEl) fireDot(chipEl, lineEl);
+    }
 
-    // 3. Expand that line's width
-    setLineWidths(prev => prev.map((w, i) => i === lineIdx ? '97%' : w));
-
-    // 4. Dot animation
-    if (lineEl) fireDot(chipEl, lineEl);
-
-    // 5. ATS score tick up
-    hoverScoreRef.current?.kill();
-    const scoreProxy = { v: atsScoreRef.current };
-    hoverScoreRef.current = gsap.to(scoreProxy, {
-      v: Math.min(99, atsScoreRef.current + 2),
-      duration: 0.4,
-      ease: 'power2.out',
-      onUpdate: () => {
-        const val = Math.round(scoreProxy.v);
-        setAtsScore(val);
-        atsScoreRef.current = val;
-      },
+    // Hide labels for other chips (user slid here — clean up stale labels)
+    [label0Ref, label1Ref, label2Ref].forEach((ref, i) => {
+      if (i !== chipIdx && ref.current) gsap.to(ref.current, { opacity: 0, duration: 0.1 });
     });
+    // Show this chip's label
+    const labelEl = [label0Ref, label1Ref, label2Ref][chipIdx]?.current;
+    if (labelEl) {
+      gsap.fromTo(labelEl, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.2 });
+    }
+
+    animateToMilestone(hoveredChipsSetRef.current.size);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fireDot]);
+  }, [fireDot, animateToMilestone]);
 
   const onChipLeave = useCallback((chipIdx: number) => {
-    const chipEl = chipRefs[chipIdx]?.current;
-    if (chipEl) gsap.to(chipEl, { scale: 1, duration: 0.2, ease: 'power2.out' });
+    if (leaveTimerRef.current !== null) clearTimeout(leaveTimerRef.current);
 
-    setHighlightedLine(null);
-    setLineWidths(['90%', '75%', '82%']);
+    leaveTimerRef.current = setTimeout(() => {
+      leaveTimerRef.current = null;
+      hoveredChipsSetRef.current.delete(chipIdx);
 
-    // Score tick back down
-    hoverScoreRef.current?.kill();
-    const scoreProxy = { v: atsScoreRef.current };
-    hoverScoreRef.current = gsap.to(scoreProxy, {
-      v: 94,
-      duration: 0.6,
-      ease: 'power2.in',
-      onUpdate: () => {
-        const val = Math.round(scoreProxy.v);
-        setAtsScore(val);
-        atsScoreRef.current = val;
-      },
-      onComplete: () => { atsScoreRef.current = 94; },
-    });
+      const chipEl = [chip0Ref, chip1Ref, chip2Ref][chipIdx]?.current;
+      if (chipEl) gsap.to(chipEl, { scale: 1, duration: 0.2, ease: "power2.out" });
+
+      const lineEl = [line0Ref, line1Ref, line2Ref][chipIdx]?.current;
+      if (lineEl) {
+        gsap.to(lineEl, {
+          width: LINE_ORIGINAL_WIDTHS[chipIdx],
+          backgroundColor: "var(--bg-sunken)",
+          duration: 0.3,
+        });
+      }
+
+      const labelEl = [label0Ref, label1Ref, label2Ref][chipIdx]?.current;
+      if (labelEl) gsap.to(labelEl, { opacity: 0, duration: 0.15 });
+
+      animateToMilestone(hoveredChipsSetRef.current.size);
+    }, 60);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [animateToMilestone]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -246,14 +363,14 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const lineStyle = (idx: number): React.CSSProperties => ({
+  const lineStyle = (): React.CSSProperties => ({
     height: "10px",
-    borderRadius: highlightedLine === idx ? "0 var(--radius-sm) var(--radius-sm) 0" : "var(--radius-sm)",
-    backgroundColor: highlightedLine === idx ? "var(--accent-subtle)" : "var(--bg-sunken)",
-    borderLeft: `3px solid ${highlightedLine === idx ? "var(--accent)" : "transparent"}`,
-    width: lineWidths[idx],
-    transition: "background-color 0.35s ease, border-color 0.35s ease, width 0.4s ease, border-radius 0.2s ease",
+    borderRadius: "var(--radius-sm)",
+    backgroundColor: "var(--bg-sunken)",
+    pointerEvents: "none",
   });
+
+  const isMaxScore = atsScore >= 100;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -336,7 +453,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             Get a tailored version in seconds — built to pass ATS filters.
           </p>
 
-          {/* Buttons */}
+          {/* CTA buttons */}
           <div ref={buttonsRef} className="flex flex-col sm:flex-row" style={{ gap: "12px" }}>
             <button
               onClick={onGetStarted}
@@ -390,16 +507,28 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         </div>
 
         {/* ── RIGHT COLUMN — animated resume preview (desktop only) ────── */}
-        <div className="hidden lg:flex" style={{ flexShrink: 0, alignItems: "center", justifyContent: "center" }}>
-
-          {/* GSAP entrance target */}
-          <div ref={cardRef} style={{ position: "relative", opacity: 0 }}>
-
-            {/* Float wrapper */}
+        <div
+          className="hidden lg:flex"
+          style={{
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            perspective: "800px",
+          }}
+          onMouseMove={handleCardTilt}
+          onMouseLeave={handleCardLeave}
+        >
+          {/* GSAP entrance + 3D tilt target */}
+          <div
+            ref={cardRef}
+            style={{ position: "relative", opacity: 0, transformStyle: "preserve-3d" }}
+          >
+            {/* Float wrapper — CSS animation isolated from GSAP transforms */}
             <div style={{ animation: "float 3s ease-in-out infinite", position: "relative" }}>
 
-              {/* ATS Score badge */}
+              {/* ATS Score badge — parallax via badgeRef */}
               <div
+                ref={badgeRef}
                 style={{
                   position: "absolute",
                   top: "-18px", right: "-18px",
@@ -413,13 +542,25 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                   justifyContent: "center",
                   zIndex: 10,
                   boxShadow: "var(--shadow-md)",
+                  pointerEvents: "none",
                 }}
               >
-                <span style={{ fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 }}>{atsScore}</span>
-                <span style={{ fontSize: "0.5rem", fontWeight: 500, opacity: 0.85, letterSpacing: "0.05em", textTransform: "uppercase", marginTop: "2px" }}>ATS</span>
+                <span style={{ fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 }}>
+                  {atsScore}
+                </span>
+                <span style={{
+                  fontSize: "0.5rem",
+                  fontWeight: 500,
+                  opacity: 0.85,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  marginTop: "2px",
+                }}>
+                  {isMaxScore ? "ATS ✓" : "ATS"}
+                </span>
               </div>
 
-              {/* Card */}
+              {/* Resume card */}
               <div
                 style={{
                   width: "340px",
@@ -431,32 +572,95 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                 }}
               >
                 {/* Name bar */}
-                <div style={{ height: "14px", width: "60%", backgroundColor: "var(--bg-sunken)", borderRadius: "var(--radius-sm)", marginBottom: "10px" }} />
+                <div
+                  ref={nameBarRef}
+                  style={{
+                    height: "14px",
+                    width: "60%",
+                    backgroundColor: "var(--bg-sunken)",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: "10px",
+                    pointerEvents: "none",
+                  }}
+                />
                 {/* Title bar */}
-                <div style={{ height: "10px", width: "40%", backgroundColor: "var(--bg-sunken)", borderRadius: "var(--radius-sm)", marginBottom: "20px" }} />
+                <div style={{
+                  height: "10px",
+                  width: "40%",
+                  backgroundColor: "var(--bg-sunken)",
+                  borderRadius: "var(--radius-sm)",
+                  marginBottom: "20px",
+                  pointerEvents: "none",
+                }} />
 
                 <div style={{ height: "1px", backgroundColor: "var(--border)", marginBottom: "16px" }} />
 
-                <div style={{ fontSize: "0.625rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "14px" }}>
+                <div style={{
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                  marginBottom: "14px",
+                }}>
                   Experience
                 </div>
 
-                {/* Content lines — interactive */}
+                {/* Experience bars — each has a floating label above it */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
-                  <div ref={line0Ref} style={lineStyle(0)} />
-                  <div ref={line1Ref} style={lineStyle(1)} />
-                  <div ref={line2Ref} style={lineStyle(2)} />
+                  {CHIP_LABELS.map((label, i) => {
+                    const lineRef  = [line0Ref,  line1Ref,  line2Ref ][i];
+                    const labelRef = [label0Ref, label1Ref, label2Ref][i];
+                    return (
+                      <div key={label} style={{ position: "relative", paddingTop: "18px" }}>
+                        {/* Floating keyword label — hidden by default, shown on chip hover */}
+                        <span
+                          ref={labelRef}
+                          style={{
+                            position: "absolute",
+                            top: "0px",
+                            left: 0,
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            letterSpacing: "0.08em",
+                            color: "var(--accent-text)",
+                            textTransform: "uppercase",
+                            opacity: 0,
+                            pointerEvents: "none",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {label}
+                        </span>
+                        {/* The bar itself — GSAP animates width + backgroundColor */}
+                        <div
+                          ref={lineRef}
+                          style={{
+                            ...lineStyle(),
+                            width: LINE_ORIGINAL_WIDTHS[i],
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div style={{ height: "1px", backgroundColor: "var(--border)", marginBottom: "16px" }} />
 
-                <div style={{ fontSize: "0.625rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "14px" }}>
+                <div style={{
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                  marginBottom: "14px",
+                }}>
                   Skills
                 </div>
 
-                {/* Keyword chips — interactive */}
+                {/* Keyword chips — interactive, cumulative score */}
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  {(["AWS", "React", "TypeScript"] as const).map((label, i) => (
+                  {CHIP_LABELS.map((label, i) => (
                     <div
                       key={label}
                       ref={i === 0 ? chip0Ref : i === 1 ? chip1Ref : chip2Ref}
@@ -472,7 +676,6 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                         opacity: 0,
                         cursor: "default",
                         userSelect: "none",
-                        transition: "background-color 0.2s ease",
                       }}
                     >
                       {label}
