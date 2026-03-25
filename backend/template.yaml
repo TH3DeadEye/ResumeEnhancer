@@ -16,7 +16,7 @@ Parameters:
 
   BedrockModelId:
     Type: String
-    Default: anthropic.claude-3-5-sonnet-20240620-v1:0
+    Default: us.anthropic.claude-3-5-haiku-20241022-v1:0
     Description: Bedrock model ID for AI enhancement
 
   FrontendUrl:
@@ -316,6 +316,26 @@ Resources:
               Action: bedrock:InvokeModel
               Resource: '*'
 
+  # --- List Handler ---
+  ListHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/lambda
+      Handler: list.handler
+      Environment:
+        Variables:
+          RESUMES_TABLE_NAME: !Ref ResumesTable
+      Events:
+        ApiGETresumelist:
+          Type: Api
+          Properties:
+            Path: /resume/list
+            Method: GET
+            RestApiId: !Ref Api
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResumesTable
+
   # --- Download Handler ---
   DownloadHandler:
     Type: AWS::Serverless::Function
@@ -355,3 +375,4 @@ Metadata:
         - EnhancementHandler
         - GeneratedBucket
         - DownloadHandler
+        - ListHandler

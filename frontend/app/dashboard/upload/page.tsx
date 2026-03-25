@@ -7,6 +7,7 @@ import { Upload, FileText, Check, AlertCircle, Download, Sparkles, X } from 'luc
 import { toast } from 'sonner';
 import { Toaster } from '@/app/components/ui/sonner';
 import { FillButton } from '@/app/components/ui/fill-button';
+import { uploadResume, pollResumeStatus, enhanceResume, downloadEnhancement, type EnhancementResult } from '@/lib/api';
 
 type UploadStatus = 'idle' | 'uploading' | 'processing' | 'enhancing' | 'complete' | 'error';
 
@@ -21,12 +22,14 @@ const card: React.CSSProperties = {
 };
 
 export default function UploadPage() {
-  const [file,            setFile           ] = useState<File | null>(null);
-  const [jobDescription,  setJobDescription ] = useState('');
-  const [uploadStatus,    setUploadStatus   ] = useState<UploadStatus>('idle');
-  const [uploadProgress,  setUploadProgress ] = useState(0);
-  const [enhancedUrl,     setEnhancedUrl    ] = useState<string | null>(null);
-  const [dragActive,      setDragActive     ] = useState(false);
+  const [file,              setFile            ] = useState<File | null>(null);
+  const [jobDescription,    setJobDescription  ] = useState('');
+  const [uploadStatus,      setUploadStatus    ] = useState<UploadStatus>('idle');
+  const [uploadProgress,    setUploadProgress  ] = useState(0);
+  const [resumeId,          setResumeId        ] = useState<string | null>(null);
+  const [enhancedUrl,       setEnhancedUrl     ] = useState<string | null>(null);
+  const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
+  const [dragActive,        setDragActive      ] = useState(false);
 
   // ── Drag handlers ─────────────────────────────────────────────────────────
 
@@ -67,47 +70,57 @@ export default function UploadPage() {
     if (!file) { toast.error('Please select a file first'); return; }
     try {
       setUploadStatus('uploading');
-      setUploadProgress(0);
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setUploadStatus('processing');
-            setTimeout(() => {
-              setUploadStatus('complete');
-              toast.success('Resume parsed successfully');
-            }, 2000);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      setUploadProgress(30);
+
+      const { resume_id } = await uploadResume(file);
+      setResumeId(resume_id);
+      setUploadProgress(60);
+
+      setUploadStatus('processing');
+      await pollResumeStatus(resume_id, ['PARSED', 'ENHANCED']);
+      setUploadProgress(100);
+      setUploadStatus('complete');
+      toast.success('Resume parsed successfully');
     } catch (error) {
       console.error('Upload error:', error);
       setUploadStatus('error');
-      toast.error('Upload failed. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Upload failed. Please try again.');
     }
   };
 
   const handleEnhance = async () => {
     if (!jobDescription.trim()) { toast.error('Please enter a job description'); return; }
+    if (!resumeId) { toast.error('No resume uploaded yet'); return; }
     try {
       setUploadStatus('enhancing');
-      setTimeout(() => {
-        setEnhancedUrl('/mock-enhanced-resume.pdf');
-        setUploadStatus('complete');
-        toast.success('Resume enhanced successfully');
-      }, 3000);
+      const result = await enhanceResume(resumeId, jobDescription);
+      setEnhancementResult(result);
+      setEnhancedUrl('done');
+      setUploadStatus('complete');
+      toast.success('Resume enhanced successfully');
     } catch (error) {
       console.error('Enhancement error:', error);
       setUploadStatus('error');
-      toast.error('Enhancement failed. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Enhancement failed. Please try again.');
     }
   };
 
-  const handleDownload = () => {
-    if (!enhancedUrl) return;
-    toast.success('Download started');
+  const handleDownload = async () => {
+    if (!resumeId) return;
+    try {
+      const data = enhancementResult ?? (await downloadEnhancement(resumeId)).enhancement;
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `enhancement-${resumeId}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Enhancement data downloaded');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Download failed');
+    }
   };
 
   const resetForm = () => {
@@ -115,7 +128,9 @@ export default function UploadPage() {
     setJobDescription('');
     setUploadStatus('idle');
     setUploadProgress(0);
+    setResumeId(null);
     setEnhancedUrl(null);
+    setEnhancementResult(null);
   };
 
   const getStepStatus = (step: number) => {
@@ -368,38 +383,64 @@ export default function UploadPage() {
       )}
 
       {/* ── Success card ── */}
-      {enhancedUrl && (
-        <div style={{
-          ...card,
-          borderColor: 'var(--success)',
-        }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+      {enhancedUrl && enhancementResult && (
+        <div style={{ ...card, borderColor: 'var(--success)' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <Check className="h-5 w-5" />
             Resume Enhanced Successfully
           </h2>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-            {['ATS-optimized keywords added', 'Tailored to job requirements', 'Enhanced with relevant achievements'].map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Check className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--success)' }} />
-                <span style={{ fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{f}</span>
+          {/* Score grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+            {[
+              { label: 'Overall', value: enhancementResult.overall_score },
+              { label: 'ATS Score', value: enhancementResult.ats_score },
+              { label: 'Job Match', value: enhancementResult.job_match_score },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ textAlign: 'center', padding: '16px 8px', borderRadius: 'var(--radius-md)', backgroundColor: 'color-mix(in oklch, var(--success) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--success) 30%, transparent)' }}>
+                <p style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--success)', lineHeight: 1 }}>{value}</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{label}</p>
               </div>
             ))}
           </div>
+
+          {/* Top wins */}
+          {enhancementResult.top_wins.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Top Wins</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {enhancementResult.top_wins.slice(0, 3).map((win, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{win}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Missing keywords */}
+          {enhancementResult.missing_keywords.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Keywords to Add</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {enhancementResult.missing_keywords.slice(0, 10).map((kw, i) => (
+                  <span key={i} style={{ fontSize: '0.75rem', fontWeight: 500, padding: '3px 10px', borderRadius: '999px', backgroundColor: 'color-mix(in oklch, var(--warning) 12%, transparent)', color: 'var(--warning)', border: '1px solid color-mix(in oklch, var(--warning) 40%, transparent)' }}>
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <FillButton
               onClick={handleDownload}
               className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-medium"
-              style={{
-                backgroundColor: 'var(--accent)',
-                color: 'white',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 20px',
-              }}
+              style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '10px 20px' }}
             >
               <Download className="h-4 w-4" />
-              Download Enhanced Resume
+              Download Enhancement Report
             </FillButton>
             <FillButton
               onClick={resetForm}
@@ -407,13 +448,7 @@ export default function UploadPage() {
               fillOpacity={0.12}
               hoverTextColor="var(--accent)"
               className="inline-flex items-center gap-1.5 text-sm font-medium"
-              style={{
-                backgroundColor: 'transparent',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 16px',
-              }}
+              style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 16px' }}
             >
               Upload Another
             </FillButton>
@@ -443,13 +478,7 @@ export default function UploadPage() {
             fillOpacity={0.12}
             hoverTextColor="var(--danger)"
             className="text-sm font-medium flex-shrink-0"
-            style={{
-              backgroundColor: 'transparent',
-              color: 'var(--danger)',
-              border: '1px solid color-mix(in oklch, var(--danger), transparent 40%)',
-              borderRadius: 'var(--radius-md)',
-              padding: '8px 16px',
-            }}
+            style={{ backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid color-mix(in oklch, var(--danger), transparent 40%)', borderRadius: 'var(--radius-md)', padding: '8px 16px' }}
           >
             Try Again
           </FillButton>

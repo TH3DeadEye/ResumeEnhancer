@@ -122,6 +122,8 @@ export async function handleResendCode(email: string): Promise<AuthResult> {
  */
 export async function handleSignIn({ email, password }: SignInParams): Promise<AuthResult> {
   try {
+    // Clear any stale session before attempting sign in
+    try { await signOut(); } catch { /* no active session — ignore */ }
     const result = await signIn({
       username: email,
       password,

@@ -101,7 +101,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             ease: "power2.out",
             stagger: 0.04,
             scrambleText: { chars: "upperCase", speed: 0.4 },
-          }, 0);
+          } as unknown as gsap.TweenVars, 0);
           tl.to(secondLine, { opacity: 1, filter: "blur(0px)", duration: 0.8, ease: "power3.out" }, 1.5);
         }
       } catch {
