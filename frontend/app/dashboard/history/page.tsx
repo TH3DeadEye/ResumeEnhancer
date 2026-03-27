@@ -239,7 +239,7 @@ export default function HistoryPage() {
       {/* ── View modal ── */}
       {viewData && (
         <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+          style={{ position: 'fixed', inset: 0, background: 'color-mix(in oklch, black 50%, transparent)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
           onClick={() => setViewData(null)}
         >
           <div

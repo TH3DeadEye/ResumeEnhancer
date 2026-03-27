@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
-import { Upload, FileText, Check, AlertCircle, Download, Sparkles, X } from 'lucide-react';
+import { Upload, FileText, Check, AlertCircle, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/app/components/ui/sonner';
 import { FillButton } from '@/app/components/ui/fill-button';
-import { uploadResume, pollResumeStatus, enhanceResume, downloadEnhancement, type EnhancementResult } from '@/lib/api';
+import { uploadResume, pollResumeStatus, enhanceResume } from '@/lib/api';
 
 type UploadStatus = 'idle' | 'uploading' | 'processing' | 'enhancing' | 'complete' | 'error';
 
@@ -22,14 +23,14 @@ const card: React.CSSProperties = {
 };
 
 export default function UploadPage() {
-  const [file,              setFile            ] = useState<File | null>(null);
-  const [jobDescription,    setJobDescription  ] = useState('');
-  const [uploadStatus,      setUploadStatus    ] = useState<UploadStatus>('idle');
-  const [uploadProgress,    setUploadProgress  ] = useState(0);
-  const [resumeId,          setResumeId        ] = useState<string | null>(null);
-  const [enhancedUrl,       setEnhancedUrl     ] = useState<string | null>(null);
-  const [enhancementResult, setEnhancementResult] = useState<EnhancementResult | null>(null);
-  const [dragActive,        setDragActive      ] = useState(false);
+  const router = useRouter();
+
+  const [file,           setFile        ] = useState<File | null>(null);
+  const [jobDescription, setJobDescription] = useState('');
+  const [uploadStatus,   setUploadStatus] = useState<UploadStatus>('idle');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [resumeId,       setResumeId    ] = useState<string | null>(null);
+  const [dragActive,     setDragActive  ] = useState(false);
 
   // ── Drag handlers ─────────────────────────────────────────────────────────
 
@@ -93,33 +94,12 @@ export default function UploadPage() {
     if (!resumeId) { toast.error('No resume uploaded yet'); return; }
     try {
       setUploadStatus('enhancing');
-      const result = await enhanceResume(resumeId, jobDescription);
-      setEnhancementResult(result);
-      setEnhancedUrl('done');
-      setUploadStatus('complete');
-      toast.success('Resume enhanced successfully');
+      await enhanceResume(resumeId, jobDescription);
+      router.push(`/dashboard/results?resumeId=${resumeId}`);
     } catch (error) {
       console.error('Enhancement error:', error);
       setUploadStatus('error');
       toast.error(error instanceof Error ? error.message : 'Enhancement failed. Please try again.');
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!resumeId) return;
-    try {
-      const data = enhancementResult ?? (await downloadEnhancement(resumeId)).enhancement;
-      const json = JSON.stringify(data, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `enhancement-${resumeId}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('Enhancement data downloaded');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Download failed');
     }
   };
 
@@ -129,15 +109,12 @@ export default function UploadPage() {
     setUploadStatus('idle');
     setUploadProgress(0);
     setResumeId(null);
-    setEnhancedUrl(null);
-    setEnhancementResult(null);
   };
 
   const getStepStatus = (step: number) => {
     if (step === 1 && (uploadStatus === 'uploading' || uploadStatus === 'processing')) return 'active';
-    if (step === 1 && (uploadStatus === 'complete' || uploadStatus === 'enhancing' || enhancedUrl)) return 'complete';
+    if (step === 1 && (uploadStatus === 'complete' || uploadStatus === 'enhancing')) return 'complete';
     if (step === 2 && uploadStatus === 'enhancing') return 'active';
-    if (step === 2 && enhancedUrl) return 'complete';
     return 'pending';
   };
 
@@ -190,7 +167,7 @@ export default function UploadPage() {
       </div>
 
       {/* ── Step 1: Upload ── */}
-      {!enhancedUrl && (
+      {uploadStatus !== 'enhancing' && (
         <div style={{
           ...card,
           borderColor: getStepStatus(1) === 'active' ? 'var(--accent)' : 'var(--border)',
@@ -317,10 +294,10 @@ export default function UploadPage() {
       )}
 
       {/* ── Step 2: Job Description ── */}
-      {(uploadStatus === 'complete' || uploadStatus === 'enhancing' || enhancedUrl) && (
+      {(uploadStatus === 'complete' || uploadStatus === 'enhancing') && (
         <div style={{
           ...card,
-          borderColor: getStepStatus(2) === 'active' ? 'var(--accent)' : 'var(--border)',
+          borderColor: uploadStatus === 'enhancing' ? 'var(--accent)' : 'var(--border)',
           transition: 'border-color 0.2s ease',
         }}>
           <div style={{ marginBottom: '20px' }}>
@@ -343,7 +320,7 @@ export default function UploadPage() {
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               rows={12}
-              disabled={uploadStatus === 'enhancing' || !!enhancedUrl}
+              disabled={uploadStatus === 'enhancing'}
               style={{
                 backgroundColor: 'var(--bg-sunken)',
                 borderColor: 'var(--border)',
@@ -362,7 +339,7 @@ export default function UploadPage() {
             </div>
           )}
 
-          {!enhancedUrl && uploadStatus !== 'enhancing' && (
+          {uploadStatus !== 'enhancing' && (
             <FillButton
               onClick={handleEnhance}
               disabled={!jobDescription.trim()}
@@ -382,79 +359,6 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* ── Success card ── */}
-      {enhancedUrl && enhancementResult && (
-        <div style={{ ...card, borderColor: 'var(--success)' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            <Check className="h-5 w-5" />
-            Resume Enhanced Successfully
-          </h2>
-
-          {/* Score grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
-            {[
-              { label: 'Overall', value: enhancementResult.overall_score },
-              { label: 'ATS Score', value: enhancementResult.ats_score },
-              { label: 'Job Match', value: enhancementResult.job_match_score },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ textAlign: 'center', padding: '16px 8px', borderRadius: 'var(--radius-md)', backgroundColor: 'color-mix(in oklch, var(--success) 10%, transparent)', border: '1px solid color-mix(in oklch, var(--success) 30%, transparent)' }}>
-                <p style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--success)', lineHeight: 1 }}>{value}</p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Top wins */}
-          {enhancementResult.top_wins.length > 0 && (
-            <div style={{ marginBottom: '16px' }}>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Top Wins</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {enhancementResult.top_wins.slice(0, 3).map((win, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <Check className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--success)' }} />
-                    <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{win}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Missing keywords */}
-          {enhancementResult.missing_keywords.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>Keywords to Add</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {enhancementResult.missing_keywords.slice(0, 10).map((kw, i) => (
-                  <span key={i} style={{ fontSize: '0.75rem', fontWeight: 500, padding: '3px 10px', borderRadius: '999px', backgroundColor: 'color-mix(in oklch, var(--warning) 12%, transparent)', color: 'var(--warning)', border: '1px solid color-mix(in oklch, var(--warning) 40%, transparent)' }}>
-                    {kw}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <FillButton
-              onClick={handleDownload}
-              className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-medium"
-              style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '10px 20px' }}
-            >
-              <Download className="h-4 w-4" />
-              Download Enhancement Report
-            </FillButton>
-            <FillButton
-              onClick={resetForm}
-              fillColor="var(--accent)"
-              fillOpacity={0.12}
-              hoverTextColor="var(--accent)"
-              className="inline-flex items-center gap-1.5 text-sm font-medium"
-              style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 16px' }}
-            >
-              Upload Another
-            </FillButton>
-          </div>
-        </div>
-      )}
 
       {/* ── Error card ── */}
       {uploadStatus === 'error' && (

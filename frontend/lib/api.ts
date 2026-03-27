@@ -32,6 +32,7 @@ export interface BulletSuggestion {
 
 export interface SectionFeedback {
   section: string;
+  score?: number;
   feedback?: string;
   suggestions: BulletSuggestion[];
 }

@@ -1,104 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Check, Plus, Download, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Check, Plus, Download, ChevronRight, AlertCircle } from 'lucide-react';
 import { gsap } from '@/app/lib/gsap';
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-interface Suggestion {
-  original: string;
-  improved: string;
-  reason: string;
-}
-
-interface SectionFeedback {
-  section: string;
-  score: number;
-  suggestions: Suggestion[];
-}
-
-interface Enhancement {
-  overall_score: number;
-  ats_score: number;
-  job_match_score: number;
-  summary_suggestion: string;
-  section_feedback: SectionFeedback[];
-  missing_keywords: string[];
-  top_wins: string[];
-}
-
-// ── Mock data — replace with real API / router state ──────────────────────────
-
-const MOCK_ENHANCEMENT: Enhancement = {
-  overall_score: 75,
-  ats_score: 82,
-  job_match_score: 88,
-  summary_suggestion:
-    'Consider leading with a concise professional summary that highlights your 5+ years in cloud infrastructure, key AWS certifications, and measurable impact.',
-  section_feedback: [
-    {
-      section: 'Summary',
-      score: 60,
-      suggestions: [
-        {
-          original: 'Experienced developer looking for new opportunities.',
-          improved:
-            'Full-stack engineer with 5+ years building scalable cloud-native applications on AWS. Specialized in React, Node.js, and DevOps automation — with a track record of shipping products that serve 100K+ users.',
-          reason: 'A generic summary wastes prime real-estate. Recruiters need level, specialization, and impact.',
-        },
-      ],
-    },
-    {
-      section: 'Work Experience',
-      score: 85,
-      suggestions: [
-        {
-          original: 'Worked on backend services and helped improve system performance.',
-          improved:
-            'Architected and optimized RESTful backend services using Node.js and AWS Lambda, reducing API response time by 38% and cutting infrastructure costs by $12K/year.',
-          reason: 'Quantified impact and specified technologies make this ATS-friendly.',
-        },
-        {
-          original: 'Led a team of developers.',
-          improved:
-            'Led a cross-functional team of 6 engineers across 3 time zones, shipping 4 major product milestones on schedule with zero critical post-launch defects.',
-          reason: 'Adding team size, scope, and outcomes verifies leadership experience.',
-        },
-      ],
-    },
-    {
-      section: 'Skills',
-      score: 70,
-      suggestions: [
-        {
-          original: 'JavaScript, CSS, HTML, some AWS experience',
-          improved:
-            'TypeScript · React · Node.js · AWS (EC2, Lambda, S3, RDS) · Docker · PostgreSQL · REST APIs · CI/CD (GitHub Actions)',
-          reason: 'ATS parsers favor structured skill lists with specific tool names.',
-        },
-      ],
-    },
-  ],
-  missing_keywords: ['AWS', 'TypeScript', 'CI/CD', 'Docker', 'Agile', 'Kubernetes'],
-  top_wins: [
-    'Strong quantification throughout Work Experience',
-    'Education section is well-formatted',
-  ],
-};
-
-// Initial resume content — matches the `original` text from suggestions
-const INITIAL_CONTENT: Record<string, string> = {
-  Summary: 'Experienced developer looking for new opportunities.',
-  'Work Experience':
-    'Worked on backend services and helped improve system performance.\n\nLed a team of developers.',
-  Education:
-    'Bachelor of Science in Computer Science\nUniversity of Technology, 2019',
-  Skills: 'JavaScript, CSS, HTML, some AWS experience',
-};
-
-// Ordered sections displayed in the left panel
-const SECTIONS = ['Summary', 'Work Experience', 'Education', 'Skills'] as const;
+import { downloadEnhancement, type DownloadResult, type EnhancementResult } from '@/lib/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -115,31 +21,69 @@ function flashElement(el: HTMLElement) {
   });
 }
 
+/** Build initial editor content from real section_feedback data. */
+function buildInitialContent(enhancement: EnhancementResult): Record<string, string> {
+  const content: Record<string, string> = {};
+  for (const section of enhancement.section_feedback) {
+    content[section.section] = section.suggestions.map((s) => s.original).join('\n\n');
+  }
+  return content;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EditorPage() {
-  const [usedKeywords, setUsedKeywords]             = useState<Set<string>>(new Set());
-  const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set());
+  const searchParams = useSearchParams();
+  const resumeId     = searchParams.get('resumeId');
+
+  const [data,    setData   ] = useState<DownloadResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError  ] = useState<string | null>(null);
+
+  const [usedKeywords,        setUsedKeywords       ] = useState<Set<string>>(new Set());
+  const [appliedSuggestions,  setAppliedSuggestions ] = useState<Set<string>>(new Set());
 
   // Section content refs — contentEditable divs
-  const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const sectionRefs  = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Panel refs for entrance animation
   const leftPanelRef  = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
-  // ── Entrance animation ───────────────────────────────────────────────────────
+  // ── Fetch data on mount ───────────────────────────────────────────────────────
 
   useEffect(() => {
+    if (!resumeId) {
+      setError('No resume ID provided. Please go back to the results page.');
+      setLoading(false);
+      return;
+    }
+
+    downloadEnhancement(resumeId)
+      .then((result) => {
+        setData(result);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load enhancement data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load enhancement data.');
+        setLoading(false);
+      });
+  }, [resumeId]);
+
+  // ── Entrance animation — runs after data is ready ────────────────────────────
+
+  useEffect(() => {
+    if (!data) return;
     const els = [leftPanelRef.current, rightPanelRef.current].filter(Boolean);
     gsap.fromTo(
       els,
       { opacity: 0, y: 32, filter: 'blur(8px)' },
       { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }
     );
-  }, []);
+  }, [data]);
 
-  // ── Keyword insertion ────────────────────────────────────────────────────────
+  // ── Keyword insertion ─────────────────────────────────────────────────────────
 
   const insertKeyword = useCallback((keyword: string) => {
     if (usedKeywords.has(keyword)) return;
@@ -174,14 +118,12 @@ export default function EditorPage() {
     sel.removeAllRanges();
     sel.addRange(range);
 
-    // GSAP fromTo opacity 0 → 1
     gsap.fromTo(span, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' });
 
-    // After 2s: fade background back to normal text
+    // After 2s fade background back to plain text, then unwrap span
     setTimeout(() => {
       span.style.backgroundColor = 'transparent';
       span.style.color           = 'inherit';
-      // After transition completes, unwrap span → plain text node
       setTimeout(() => {
         if (span.parentNode) {
           const text = document.createTextNode(span.textContent ?? keyword);
@@ -193,18 +135,17 @@ export default function EditorPage() {
     setUsedKeywords((prev) => new Set([...prev, keyword]));
   }, [usedKeywords]);
 
-  // ── Apply AI suggestion ──────────────────────────────────────────────────────
+  // ── Apply AI suggestion ───────────────────────────────────────────────────────
 
   const applySuggestion = useCallback(
     (sectionName: string, improved: string, id: string) => {
-      if (appliedSuggestions.has(id)) return;
+      if (appliedSuggestions.has(id) || !data) return;
 
       const el = sectionRefs.current.get(sectionName);
       if (!el) return;
 
-      const current = el.innerText ?? '';
-      // Try to find and replace the matching line; fall back to full replace
-      const original = MOCK_ENHANCEMENT.section_feedback
+      const current  = el.innerText ?? '';
+      const original = data.enhancement.section_feedback
         .flatMap((s) => s.suggestions)
         .find((s) => s.improved === improved)?.original ?? '';
 
@@ -217,26 +158,55 @@ export default function EditorPage() {
       flashElement(el);
       setAppliedSuggestions((prev) => new Set([...prev, id]));
     },
-    [appliedSuggestions]
+    [appliedSuggestions, data]
   );
 
-  // ── PDF download ─────────────────────────────────────────────────────────────
+  // ── PDF download ──────────────────────────────────────────────────────────────
 
   const handleDownload = useCallback(() => {
     if (typeof window !== 'undefined') window.print();
   }, []);
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Loading state ─────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '20px' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+          Loading editor…
+        </p>
+      </div>
+    );
+  }
+
+  // ── Error state ───────────────────────────────────────────────────────────────
+
+  if (error || !data) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '64px auto', padding: '32px', backgroundColor: 'var(--bg-surface)', border: '1px solid color-mix(in oklch, var(--danger) 40%, transparent)', borderRadius: 'var(--radius-lg)', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+        <AlertCircle style={{ color: 'var(--danger)', flexShrink: 0, marginTop: '2px' }} size={20} />
+        <div>
+          <p style={{ fontWeight: 600, color: 'var(--danger)', marginBottom: '6px' }}>Unable to load editor</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            {error ?? 'Something went wrong. Please try again.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Derive editor content from real data ──────────────────────────────────────
+
+  const enhancement    = data.enhancement;
+  const sections       = enhancement.section_feedback.map((s) => s.section);
+  const initialContent = buildInitialContent(enhancement);
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '24px',
-        alignItems: 'flex-start',
-        minHeight: '100%',
-      }}
-    >
+    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', minHeight: '100%' }}>
+
       {/* ── LEFT PANEL — editable resume ── */}
       <div
         ref={leftPanelRef}
@@ -248,7 +218,6 @@ export default function EditorPage() {
           padding: '24px',
           opacity: 0,
         }}
-        className="resume-left-panel"
       >
         {/* Toolbar */}
         <div
@@ -262,14 +231,7 @@ export default function EditorPage() {
           }}
         >
           <div>
-            <h1
-              style={{
-                fontSize: '1.125rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.01em',
-              }}
-            >
+            <h1 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Resume Editor
             </h1>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -292,12 +254,8 @@ export default function EditorPage() {
               cursor: 'pointer',
               flexShrink: 0,
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent-hover)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent)';
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent-hover)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent)'; }}
           >
             <Download size={14} />
             Download PDF
@@ -306,30 +264,14 @@ export default function EditorPage() {
 
         {/* Editable sections */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          {SECTIONS.map((name) => (
+          {sections.map((name) => (
             <div key={name}>
-              {/* Section label */}
-              <div
-                style={{
-                  fontSize: '0.6875rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
-                  marginBottom: '8px',
-                }}
-              >
+              <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>
                 {name}
               </div>
-
-              {/* Section divider */}
               <div style={{ height: '1px', backgroundColor: 'var(--border)', marginBottom: '10px' }} />
-
-              {/* ContentEditable section */}
               <div
-                ref={(el) => {
-                  if (el) sectionRefs.current.set(name, el);
-                }}
+                ref={(el) => { if (el) sectionRefs.current.set(name, el); }}
                 contentEditable
                 suppressContentEditableWarning
                 spellCheck
@@ -344,13 +286,9 @@ export default function EditorPage() {
                   whiteSpace: 'pre-wrap',
                   transition: 'background-color 0.2s ease',
                 }}
-                onFocus={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--bg-subtle)';
-                }}
-                onBlur={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent';
-                }}
-                dangerouslySetInnerHTML={{ __html: INITIAL_CONTENT[name] ?? '' }}
+                onFocus={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--bg-subtle)'; }}
+                onBlur={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'; }}
+                dangerouslySetInnerHTML={{ __html: initialContent[name] ?? '' }}
               />
             </div>
           ))}
@@ -381,15 +319,7 @@ export default function EditorPage() {
             padding: '24px',
           }}
         >
-          <h2
-            style={{
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: '4px',
-              letterSpacing: '-0.01em',
-            }}
-          >
+          <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.01em' }}>
             Suggested Keywords
           </h2>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
@@ -397,12 +327,11 @@ export default function EditorPage() {
           </p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {MOCK_ENHANCEMENT.missing_keywords.map((kw) => {
+            {enhancement.missing_keywords.map((kw) => {
               const used = usedKeywords.has(kw);
               return (
                 <div
                   key={kw}
-                  // onMouseDown with preventDefault keeps contentEditable focused
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => insertKeyword(kw)}
                   style={{
@@ -416,9 +345,7 @@ export default function EditorPage() {
                     cursor: used ? 'default' : 'pointer',
                     userSelect: 'none',
                     transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease',
-                    backgroundColor: used
-                      ? 'color-mix(in oklch, var(--success) 12%, transparent)'
-                      : 'var(--accent-subtle)',
+                    backgroundColor: used ? 'color-mix(in oklch, var(--success) 12%, transparent)' : 'var(--accent-subtle)',
                     border: `1px solid ${used ? 'var(--success)' : 'transparent'}`,
                     color: used ? 'var(--success)' : 'var(--accent-text)',
                   }}
@@ -440,15 +367,7 @@ export default function EditorPage() {
             padding: '24px',
           }}
         >
-          <h2
-            style={{
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: '4px',
-              letterSpacing: '-0.01em',
-            }}
-          >
+          <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.01em' }}>
             AI Suggestions
           </h2>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
@@ -456,7 +375,7 @@ export default function EditorPage() {
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {MOCK_ENHANCEMENT.section_feedback.map((sec, si) =>
+            {enhancement.section_feedback.map((sec, si) =>
               sec.suggestions.map((sug, sgi) => {
                 const id      = `${si}-${sgi}`;
                 const applied = appliedSuggestions.has(id);
@@ -509,17 +428,11 @@ export default function EditorPage() {
                     </p>
 
                     {/* Reason hint */}
-                    <p
-                      style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)',
-                        fontStyle: 'italic',
-                        marginBottom: '12px',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {sug.reason}
-                    </p>
+                    {sug.reason && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '12px', lineHeight: 1.5 }}>
+                        {sug.reason}
+                      </p>
+                    )}
 
                     {/* Apply button */}
                     <button
@@ -535,28 +448,18 @@ export default function EditorPage() {
                         padding: '6px 14px',
                         cursor: applied ? 'default' : 'pointer',
                         transition: 'background-color 0.2s ease, color 0.2s ease',
-                        backgroundColor: applied
-                          ? 'color-mix(in oklch, var(--success) 12%, transparent)'
-                          : 'var(--accent)',
+                        backgroundColor: applied ? 'color-mix(in oklch, var(--success) 12%, transparent)' : 'var(--accent)',
                         color: applied ? 'var(--success)' : 'white',
                         border: `1px solid ${applied ? 'var(--success)' : 'transparent'}`,
                       }}
                       onMouseEnter={(e) => {
-                        if (!applied) {
-                          (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent-hover)';
-                        }
+                        if (!applied) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent-hover)';
                       }}
                       onMouseLeave={(e) => {
-                        if (!applied) {
-                          (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent)';
-                        }
+                        if (!applied) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--accent)';
                       }}
                     >
-                      {applied ? (
-                        <><Check size={12} /> Applied</>
-                      ) : (
-                        <>Apply <ChevronRight size={12} /></>
-                      )}
+                      {applied ? <><Check size={12} /> Applied</> : <>Apply <ChevronRight size={12} /></>}
                     </button>
                   </div>
                 );
