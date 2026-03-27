@@ -21,15 +21,6 @@ function flashElement(el: HTMLElement) {
   });
 }
 
-/** Build initial editor content from real section_feedback data. */
-function buildInitialContent(enhancement: EnhancementResult): Record<string, string> {
-  const content: Record<string, string> = {};
-  for (const section of enhancement.section_feedback) {
-    content[section.section] = section.suggestions.map((s) => s.original).join('\n\n');
-  }
-  return content;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EditorPage() {
@@ -40,13 +31,16 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(true);
   const [error,   setError  ] = useState<string | null>(null);
 
-  const [usedKeywords,        setUsedKeywords       ] = useState<Set<string>>(new Set());
-  const [appliedSuggestions,  setAppliedSuggestions ] = useState<Set<string>>(new Set());
+  const [usedKeywords,       setUsedKeywords      ] = useState<Set<string>>(new Set());
+  const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set());
 
-  // Section content refs — contentEditable divs
-  const sectionRefs  = useRef<Map<string, HTMLDivElement>>(new Map());
+  // contentEditable section element map
+  const sectionRefs        = useRef<Map<string, HTMLDivElement>>(new Map());
+  // Tracks which sections have had their initial text content set
+  const sectionInitialized = useRef<Set<string>>(new Set());
+  // Last valid cursor Range inside the editor — used for keyword insertion
+  const savedRangeRef      = useRef<Range | null>(null);
 
-  // Panel refs for entrance animation
   const leftPanelRef  = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
@@ -71,45 +65,84 @@ export default function EditorPage() {
       });
   }, [resumeId]);
 
+  // Reset section-initialization tracking whenever fresh data arrives
+  useEffect(() => {
+    if (data) sectionInitialized.current.clear();
+  }, [data]);
+
   // ── Entrance animation — runs after data is ready ────────────────────────────
 
   useEffect(() => {
     if (!data) return;
-    const els = [leftPanelRef.current, rightPanelRef.current].filter(Boolean);
-    gsap.fromTo(
-      els,
-      { opacity: 0, y: 32, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }
-    );
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        [leftPanelRef.current, rightPanelRef.current].filter(Boolean),
+        { opacity: 0, y: 32, filter: 'blur(8px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }
+      );
+    });
+    return () => ctx.revert();
   }, [data]);
 
+  // ── Save cursor position inside the editor ────────────────────────────────────
+  //
+  // Called from onMouseUp / onKeyUp on each contentEditable div.
+  // Clones the current Range so it stays valid even after DOM mutations.
+
+  const saveRange = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    let insideEditor = false;
+    sectionRefs.current.forEach((el) => {
+      if (el?.contains(range.commonAncestorContainer)) insideEditor = true;
+    });
+    if (insideEditor) savedRangeRef.current = range.cloneRange();
+  }, []);
+
   // ── Keyword insertion ─────────────────────────────────────────────────────────
+  //
+  // Uses the saved range rather than live window.getSelection() to avoid race
+  // conditions when e.preventDefault() on mousedown discards the selection in
+  // some browsers. Falls back to end-of-first-section if cursor was never placed.
 
   const insertKeyword = useCallback((keyword: string) => {
     if (usedKeywords.has(keyword)) return;
 
     const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
+    if (!sel) return;
 
-    const range = sel.getRangeAt(0);
+    let range: Range;
 
-    // Verify cursor is inside one of our editable sections
-    let insideEditor = false;
-    sectionRefs.current.forEach((el) => {
-      if (el && el.contains(range.commonAncestorContainer)) insideEditor = true;
-    });
-    if (!insideEditor) return;
+    if (savedRangeRef.current) {
+      // Restore the saved editor range
+      range = savedRangeRef.current;
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      // Fallback: insert at the end of the first available section
+      const firstSection = sectionRefs.current.values().next().value as HTMLDivElement | undefined;
+      if (!firstSection) return;
+      firstSection.focus();
+      const r = document.createRange();
+      r.selectNodeContents(firstSection);
+      r.collapse(false); // collapse to end
+      range = r;
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedRangeRef.current = range.cloneRange();
+    }
 
-    // Build highlighted span
+    // Build highlighted span — styles use CSS variables throughout
     const span = document.createElement('span');
-    span.textContent = keyword;
+    span.textContent            = keyword;
     span.style.backgroundColor  = 'var(--accent-subtle)';
-    span.style.color             = 'var(--accent-text)';
-    span.style.borderRadius      = '4px';
-    span.style.padding           = '0 4px';
-    span.style.display           = 'inline';
-    span.style.opacity           = '0';
-    span.style.transition        = 'background-color 0.5s ease, color 0.5s ease';
+    span.style.color            = 'var(--accent-text)';
+    span.style.borderRadius     = '4px';
+    span.style.padding          = '0 4px';
+    span.style.display          = 'inline';
+    span.style.opacity          = '0';
+    span.style.transition       = 'background-color 0.5s ease, color 0.5s ease';
 
     range.deleteContents();
     range.insertNode(span);
@@ -118,16 +151,18 @@ export default function EditorPage() {
     sel.removeAllRanges();
     sel.addRange(range);
 
+    // Update saved range to point after the inserted span
+    savedRangeRef.current = range.cloneRange();
+
     gsap.fromTo(span, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' });
 
-    // After 2s fade background back to plain text, then unwrap span
+    // After 2 s: fade span back to plain text, then unwrap to a text node
     setTimeout(() => {
       span.style.backgroundColor = 'transparent';
       span.style.color           = 'inherit';
       setTimeout(() => {
         if (span.parentNode) {
-          const text = document.createTextNode(span.textContent ?? keyword);
-          span.parentNode.replaceChild(text, span);
+          span.parentNode.replaceChild(document.createTextNode(span.textContent ?? keyword), span);
         }
       }, 500);
     }, 2000);
@@ -136,6 +171,11 @@ export default function EditorPage() {
   }, [usedKeywords]);
 
   // ── Apply AI suggestion ───────────────────────────────────────────────────────
+  //
+  // Uses el.textContent for both reading and writing to avoid innerText's layout-
+  // dependent whitespace normalization across browsers with white-space:pre-wrap.
+  // Initial section content is set once via ref callback (not dangerouslySetInnerHTML)
+  // so React's reconciler never touches the DOM content on re-renders.
 
   const applySuggestion = useCallback(
     (sectionName: string, improved: string, id: string) => {
@@ -144,15 +184,16 @@ export default function EditorPage() {
       const el = sectionRefs.current.get(sectionName);
       if (!el) return;
 
-      const current  = el.innerText ?? '';
+      const current  = el.textContent ?? '';
       const original = data.enhancement.section_feedback
         .flatMap((s) => s.suggestions)
         .find((s) => s.improved === improved)?.original ?? '';
 
       if (original && current.includes(original)) {
-        el.innerText = current.replace(original, improved);
+        el.textContent = current.replace(original, improved);
       } else {
-        el.innerText = improved;
+        // Original not found (user edited the text): replace entire section
+        el.textContent = improved;
       }
 
       flashElement(el);
@@ -196,20 +237,27 @@ export default function EditorPage() {
     );
   }
 
-  // ── Derive editor content from real data ──────────────────────────────────────
+  // ── Derive editor structure from real data ────────────────────────────────────
 
-  const enhancement    = data.enhancement;
-  const sections       = enhancement.section_feedback.map((s) => s.section);
-  const initialContent = buildInitialContent(enhancement);
+  const enhancement = data.enhancement;
+  const sections    = enhancement.section_feedback.map((s) => s.section);
+
+  // Map section name → initial plain-text content (originals joined by blank line)
+  const initialContent: Record<string, string> = {};
+  enhancement.section_feedback.forEach((s) => {
+    initialContent[s.section] = s.suggestions.map((sg) => sg.original).join('\n\n');
+  });
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', minHeight: '100%' }}>
 
-      {/* ── LEFT PANEL — editable resume ── */}
+      {/* ── LEFT PANEL — editable resume ──
+          id="resume-print-area" targets the @media print isolation rule in globals.css */}
       <div
         ref={leftPanelRef}
+        id="resume-print-area"
         style={{
           flex: '0 0 60%',
           backgroundColor: 'var(--bg-surface)',
@@ -235,7 +283,7 @@ export default function EditorPage() {
               Resume Editor
             </h1>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Click any section to edit · Keywords insert at cursor
+              Click a section to edit · Click a keyword chip to insert at cursor
             </p>
           </div>
 
@@ -262,7 +310,10 @@ export default function EditorPage() {
           </button>
         </div>
 
-        {/* Editable sections */}
+        {/* Editable sections
+            Content is set once via the ref callback using textContent.
+            dangerouslySetInnerHTML is intentionally NOT used so React never
+            resets the DOM on state-driven re-renders (e.g. setAppliedSuggestions). */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
           {sections.map((name) => (
             <div key={name}>
@@ -271,10 +322,23 @@ export default function EditorPage() {
               </div>
               <div style={{ height: '1px', backgroundColor: 'var(--border)', marginBottom: '10px' }} />
               <div
-                ref={(el) => { if (el) sectionRefs.current.set(name, el); }}
+                ref={(el) => {
+                  if (!el) return;
+                  sectionRefs.current.set(name, el);
+                  // Set initial text content exactly once per section, never again.
+                  // This keeps React's reconciler from ever touching the DOM content.
+                  if (!sectionInitialized.current.has(name)) {
+                    el.textContent = initialContent[name] ?? '';
+                    sectionInitialized.current.add(name);
+                  }
+                }}
                 contentEditable
                 suppressContentEditableWarning
                 spellCheck
+                // Save the cursor range on every mouse/keyboard interaction so
+                // insertKeyword can restore it even after the selection changes.
+                onMouseUp={saveRange}
+                onKeyUp={saveRange}
                 style={{
                   color: 'var(--text-secondary)',
                   fontSize: '0.9375rem',
@@ -288,7 +352,6 @@ export default function EditorPage() {
                 }}
                 onFocus={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--bg-subtle)'; }}
                 onBlur={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'; }}
-                dangerouslySetInnerHTML={{ __html: initialContent[name] ?? '' }}
               />
             </div>
           ))}
@@ -323,7 +386,7 @@ export default function EditorPage() {
             Suggested Keywords
           </h2>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            Click to insert at cursor position
+            Click inside a section, then click a keyword to insert it at the cursor
           </p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -332,6 +395,8 @@ export default function EditorPage() {
               return (
                 <div
                   key={kw}
+                  // e.preventDefault() on mousedown prevents the browser from moving
+                  // focus away from the contentEditable, preserving the selection.
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => insertKeyword(kw)}
                   style={{

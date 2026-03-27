@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { gsap } from '@/app/lib/gsap';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
 import { Upload, FileText, Check, AlertCircle, Sparkles, X } from 'lucide-react';
@@ -24,6 +25,22 @@ const card: React.CSSProperties = {
 
 export default function UploadPage() {
   const router = useRouter();
+
+  const headerRef  = useRef<HTMLDivElement>(null);
+  const stepsRef   = useRef<HTMLDivElement>(null);
+
+  // ── Entrance animation ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        [headerRef.current, stepsRef.current].filter(Boolean),
+        { opacity: 0, y: 32, filter: 'blur(8px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }
+      );
+    });
+    return () => ctx.revert();
+  }, []);
 
   const [file,           setFile        ] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState('');
@@ -123,7 +140,7 @@ export default function UploadPage() {
       <Toaster />
 
       {/* ── Header ── */}
-      <div>
+      <div ref={headerRef} style={{ opacity: 0 }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
           Upload Resume
         </h1>
@@ -133,7 +150,7 @@ export default function UploadPage() {
       </div>
 
       {/* ── Progress steps ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div ref={stepsRef} style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: 0 }}>
         {[1, 2].map((step) => {
           const status = getStepStatus(step);
           return (

@@ -97,11 +97,12 @@ export default function ResultsPage() {
 
   const [openSections, setOpenSections] = useState<Set<number>>(new Set([0]));
 
-  const scoreRowRef = useRef<HTMLDivElement>(null);
-  const winsRef     = useRef<HTMLDivElement>(null);
-  const keywordsRef = useRef<HTMLDivElement>(null);
-  const summaryRef  = useRef<HTMLDivElement>(null);
-  const feedbackRef = useRef<HTMLDivElement>(null);
+  const pageHeaderRef = useRef<HTMLDivElement>(null);
+  const scoreRowRef   = useRef<HTMLDivElement>(null);
+  const winsRef       = useRef<HTMLDivElement>(null);
+  const keywordsRef   = useRef<HTMLDivElement>(null);
+  const summaryRef    = useRef<HTMLDivElement>(null);
+  const feedbackRef   = useRef<HTMLDivElement>(null);
 
   // ── Fetch real data ──────────────────────────────────────────────────────────
 
@@ -124,12 +125,13 @@ export default function ResultsPage() {
       });
   }, [resumeId]);
 
-  // ── Section entrance animations ─────────────────────────────────────────────
+  // ── Entrance animations — run after data is ready ────────────────────────────
 
   useEffect(() => {
     if (!data) return;
 
-    const sections = [
+    const targets = [
+      pageHeaderRef.current,
       scoreRowRef.current,
       winsRef.current,
       keywordsRef.current,
@@ -137,27 +139,29 @@ export default function ResultsPage() {
       feedbackRef.current,
     ].filter(Boolean) as HTMLElement[];
 
-    sections.forEach((el, i) => {
-      gsap.fromTo(
-        el,
-        { opacity: 0, y: 32, filter: 'blur(8px)' },
-        {
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          duration: 0.7,
-          ease: 'power3.out',
-          delay: i * 0.12,
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 82%',
-            toggleActions: 'play none none none',
-          },
-        }
-      );
+    const ctx = gsap.context(() => {
+      targets.forEach((el, i) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, y: 32, filter: 'blur(8px)' },
+          {
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+            duration: 0.7,
+            ease: 'power3.out',
+            delay: i * 0.12,
+            scrollTrigger: {
+              trigger: el,
+              start: 'top 82%',
+              toggleActions: 'play none none none',
+            },
+          }
+        );
+      });
     });
 
-    return () => { ScrollTrigger.getAll().forEach(t => t.kill()); };
+    return () => ctx.revert();
   }, [data]);
 
   // ── Keyword click handler ────────────────────────────────────────────────────
@@ -232,7 +236,7 @@ export default function ResultsPage() {
       }}
     >
       {/* Page header */}
-      <div>
+      <div ref={pageHeaderRef} style={{ opacity: 0 }}>
         <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>
           AI Analysis
         </p>

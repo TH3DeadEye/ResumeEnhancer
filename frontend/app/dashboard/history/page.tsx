@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check } from 'lucide-react';
 import Link from 'next/link';
 import { FillButton } from '@/app/components/ui/fill-button';
 import { listResumes, downloadEnhancement, type Resume, type DownloadResult } from '@/lib/api';
 import { toast } from 'sonner';
 import { Toaster } from '@/app/components/ui/sonner';
+import { gsap } from '@/app/lib/gsap';
 
 // Map backend status → local display status
 type DisplayStatus = 'processing' | 'parsed' | 'enhanced' | 'failed';
@@ -33,6 +34,22 @@ export default function HistoryPage() {
   const [filterStatus,  setFilterStatus ] = useState<string>('all');
   const [viewData,      setViewData     ] = useState<DownloadResult | null>(null);
   const [viewLoading,   setViewLoading  ] = useState<string | null>(null); // resume_id being loaded
+
+  const headerRef  = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // ── Entrance animation ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        [headerRef.current, contentRef.current].filter(Boolean),
+        { opacity: 0, y: 32, filter: 'blur(8px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7, ease: 'power3.out', stagger: 0.12 }
+      );
+    });
+    return () => ctx.revert();
+  }, []);
 
   useEffect(() => { fetchResumes(); }, []);
 
@@ -105,7 +122,7 @@ export default function HistoryPage() {
       <Toaster />
 
       {/* ── Header ── */}
-      <div>
+      <div ref={headerRef} style={{ opacity: 0 }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 500, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
           History
         </h1>
@@ -115,7 +132,7 @@ export default function HistoryPage() {
       </div>
 
       {/* ── Search + filters ── */}
-      <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+      <div ref={contentRef} style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px', boxShadow: 'var(--shadow-sm)', opacity: 0 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
             <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', width: '16px', height: '16px', pointerEvents: 'none' }} />
