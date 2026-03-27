@@ -167,9 +167,26 @@ export default function ResultsPage() {
   // ── Keyword click handler ────────────────────────────────────────────────────
 
   const handleKeywordClick = useCallback((keyword: string) => {
-    if (addedKeywords.has(keyword)) return;
-
     const el = chipRefs.current.get(keyword);
+
+    if (addedKeywords.has(keyword)) {
+      // Deselect — animate back to unselected state
+      if (el) {
+        gsap.fromTo(
+          el,
+          { scale: 0.97 },
+          { scale: 1, duration: 0.25, ease: 'power2.out' }
+        );
+      }
+      setAddedKeywords(prev => {
+        const next = new Set(prev);
+        next.delete(keyword);
+        return next;
+      });
+      return;
+    }
+
+    // Select — animate pulse
     if (el) {
       gsap.fromTo(
         el,
@@ -318,12 +335,14 @@ export default function ResultsPage() {
                       padding: '6px 12px',
                       fontSize: '0.8125rem',
                       fontWeight: 500,
-                      cursor: isAdded ? 'default' : 'pointer',
+                      cursor: 'pointer',
                       userSelect: 'none',
                       transition: 'background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease',
-                      backgroundColor: isAdded ? 'color-mix(in oklch, var(--success) 12%, transparent)' : 'var(--accent-subtle)',
-                      border: `1px solid ${isAdded ? 'var(--success)' : 'transparent'}`,
-                      color: isAdded ? 'var(--success)' : 'var(--accent-text)',
+                      backgroundColor: isAdded
+                        ? 'color-mix(in oklch, var(--accent) 10%, transparent)'
+                        : 'transparent',
+                      border: `1px solid ${isAdded ? 'var(--accent)' : 'var(--border)'}`,
+                      color: isAdded ? 'var(--accent-text)' : 'var(--text-muted)',
                     }}
                   >
                     {isAdded ? <Check size={12} style={{ flexShrink: 0 }} /> : <Plus size={12} style={{ flexShrink: 0 }} />}

@@ -5,6 +5,7 @@ import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check } from 'luci
 import Link from 'next/link';
 import { FillButton } from '@/app/components/ui/fill-button';
 import { listResumes, downloadEnhancement, type Resume, type DownloadResult } from '@/lib/api';
+import { generateEnhancementPDF } from '@/lib/generate-pdf';
 import { toast } from 'sonner';
 import { Toaster } from '@/app/components/ui/sonner';
 import { gsap } from '@/app/lib/gsap';
@@ -30,10 +31,12 @@ const FILTERS = ['all', 'enhanced', 'parsed', 'processing'] as const;
 
 export default function HistoryPage() {
   const [resumes,       setResumes      ] = useState<Resume[]>([]);
+  const [loading,       setLoading      ] = useState(true);
   const [searchQuery,   setSearchQuery  ] = useState('');
   const [filterStatus,  setFilterStatus ] = useState<string>('all');
   const [viewData,      setViewData     ] = useState<DownloadResult | null>(null);
   const [viewLoading,   setViewLoading  ] = useState<string | null>(null); // resume_id being loaded
+  const [pdfLoading,    setPdfLoading   ] = useState<string | null>(null);
 
   const headerRef  = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -60,6 +63,8 @@ export default function HistoryPage() {
     } catch (error) {
       console.error('Failed to fetch resumes:', error);
       toast.error('Failed to load resumes');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,21 +82,14 @@ export default function HistoryPage() {
 
   const handleDownload = async (resumeId: string, filename: string) => {
     try {
-      setViewLoading(resumeId);
+      setPdfLoading(resumeId);
       const data = await downloadEnhancement(resumeId);
-      const json = JSON.stringify(data.enhancement, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `enhancement-${filename.replace('.pdf', '')}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('Enhancement report downloaded');
+      await generateEnhancementPDF(data, filename);
+      toast.success('PDF downloaded');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Download failed');
+      toast.error(error instanceof Error ? error.message : 'PDF generation failed');
     } finally {
-      setViewLoading(null);
+      setPdfLoading(null);
     }
   };
 
@@ -168,7 +166,33 @@ export default function HistoryPage() {
       </div>
 
       {/* ── Resume list ── */}
-      {filteredResumes.length === 0 ? (
+      {loading ? (
+        /* Skeleton rows — prevents empty-state flash while fetch is in-flight */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                opacity: 1 - i * 0.12,
+              }}
+            >
+              <div style={{ width: '20px', height: '20px', borderRadius: '4px', backgroundColor: 'var(--bg-sunken)', flexShrink: 0 }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ height: '14px', borderRadius: '4px', backgroundColor: 'var(--bg-sunken)', width: '35%' }} />
+                <div style={{ height: '12px', borderRadius: '4px', backgroundColor: 'var(--bg-sunken)', width: '22%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredResumes.length === 0 ? (
+        /* Only show empty state once loading is confirmed complete */
         <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '64px 24px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
           <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: 'var(--text-disabled)' }} />
           <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '6px' }}>No resumes found</p>
@@ -179,8 +203,9 @@ export default function HistoryPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filteredResumes.map((resume) => {
-            const display = toDisplayStatus(resume.status);
-            const isLoading = viewLoading === resume.resume_id;
+            const display   = toDisplayStatus(resume.status);
+            const isViewing = viewLoading === resume.resume_id;
+            const isPdfing  = pdfLoading  === resume.resume_id;
             return (
               <div
                 key={resume.resume_id}
@@ -209,23 +234,26 @@ export default function HistoryPage() {
                     <>
                       <FillButton
                         onClick={() => handleView(resume.resume_id)}
-                        disabled={isLoading}
+                        disabled={isViewing || isPdfing}
                         fillColor="var(--accent)"
                         fillOpacity={0.12}
                         hoverTextColor="var(--accent)"
                         className="inline-flex items-center gap-1.5 text-xs font-medium"
                         style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
                       >
-                        {isLoading ? <span style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> : <Eye className="h-3.5 w-3.5" />}
+                        {isViewing ? <span style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--accent)', borderTopColor: 'transparent', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> : <Eye className="h-3.5 w-3.5" />}
                         View
                       </FillButton>
                       <FillButton
                         onClick={() => handleDownload(resume.resume_id, resume.filename)}
-                        disabled={isLoading}
+                        disabled={isViewing || isPdfing}
                         className="inline-flex items-center gap-1.5 text-xs font-medium"
-                        style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                        style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px', opacity: isPdfing ? 0.7 : 1 }}
                       >
-                        <Download className="h-3.5 w-3.5" /> Download
+                        {isPdfing
+                          ? <><span style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid white', borderTopColor: 'transparent', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> Generating…</>
+                          : <><Download className="h-3.5 w-3.5" /> Download PDF</>
+                        }
                       </FillButton>
                     </>
                   )}
