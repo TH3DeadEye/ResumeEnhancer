@@ -14,7 +14,7 @@ region = "us-west-2"
 stack_name = "resume-enhancer-dev"
 
 [default.sync.parameters]
-template_file = "/Users/arman/Desktop/university/GBC/COMP2154/ResumeEnhancer/backend/template.yaml"
+template_file = "template.yaml"
 dependency_layer = false
 build_in_source = true
 code = true
