@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
-import { Upload, FileText, Check, AlertCircle, Download, Sparkles, X } from 'lucide-react';
+import { Upload, FileText, Check, AlertCircle, Download, Sparkles, X, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from '@/app/components/ui/sonner';
 import { FillButton } from '@/app/components/ui/fill-button';
@@ -22,6 +23,7 @@ const card: React.CSSProperties = {
 };
 
 export default function UploadPage() {
+  const router = useRouter();
   const [file,              setFile            ] = useState<File | null>(null);
   const [jobDescription,    setJobDescription  ] = useState('');
   const [uploadStatus,      setUploadStatus    ] = useState<UploadStatus>('idle');
@@ -433,14 +435,25 @@ export default function UploadPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <FillButton
-              onClick={handleDownload}
+              onClick={() => router.push(`/dashboard/editor?resumeId=${resumeId}`)}
               className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-medium"
               style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '10px 20px' }}
             >
+              <Pencil className="h-4 w-4" />
+              Open in Resume Builder
+            </FillButton>
+            <FillButton
+              onClick={handleDownload}
+              fillColor="var(--accent)"
+              fillOpacity={0.12}
+              hoverTextColor="var(--accent)"
+              className="inline-flex items-center gap-1.5 text-sm font-medium"
+              style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '10px 16px' }}
+            >
               <Download className="h-4 w-4" />
-              Download Enhancement Report
+              Download JSON
             </FillButton>
             <FillButton
               onClick={resetForm}

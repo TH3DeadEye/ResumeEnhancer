@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check } from 'lucide-react';
+import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { FillButton } from '@/app/components/ui/fill-button';
 import { listResumes, downloadEnhancement, type Resume, type DownloadResult } from '@/lib/api';
@@ -190,6 +190,14 @@ export default function HistoryPage() {
 
                   {display === 'enhanced' && (
                     <>
+                      <Link href={`/dashboard/editor?resumeId=${resume.resume_id}`}>
+                        <FillButton
+                          className="inline-flex items-center gap-1.5 text-xs font-medium"
+                          style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Build
+                        </FillButton>
+                      </Link>
                       <FillButton
                         onClick={() => handleView(resume.resume_id)}
                         disabled={isLoading}
@@ -205,8 +213,11 @@ export default function HistoryPage() {
                       <FillButton
                         onClick={() => handleDownload(resume.resume_id, resume.filename)}
                         disabled={isLoading}
+                        fillColor="var(--accent)"
+                        fillOpacity={0.12}
+                        hoverTextColor="var(--accent)"
                         className="inline-flex items-center gap-1.5 text-xs font-medium"
-                        style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                        style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
                       >
                         <Download className="h-3.5 w-3.5" /> Download
                       </FillButton>
