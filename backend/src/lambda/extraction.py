@@ -3,7 +3,7 @@ import boto3
 import json
 import os
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from pypdf import PdfReader
 
@@ -15,7 +15,9 @@ s3 = boto3.client('s3')
 dynamodb = boto3.resource('dynamodb')
 
 def handler(event, context):
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
+    # Safe defaults so except block can always reference these
+    user_id, resume_id = "unknown", "unknown"
     try:
         # 1. Parse Event Data
         records = event["Records"][0]
@@ -111,4 +113,18 @@ def handler(event, context):
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
+        try:
+            table = dynamodb.Table(RESUMES_TABLE_NAME)
+            table.update_item(
+                Key={"user_id": user_id, "resume_id": resume_id},
+                UpdateExpression="SET #status = :status, error_message = :err, updated_at = :ts",
+                ExpressionAttributeNames={"#status": "status"},
+                ExpressionAttributeValues={
+                    ":status": "FAILED",
+                    ":err": str(e),
+                    ":ts": timestamp,
+                },
+            )
+        except Exception:
+            print("Failed to update DynamoDB with error status")
         raise e

@@ -32,7 +32,6 @@ Globals:
     Tracing: Active
     Environment:
       Variables:
-        # TRICK: Use !Sub string instead of !Ref to break circular dependency
         PARSED_BUCKET_NAME: !Sub ${AWS::StackName}-parsed-${AWS::AccountId}
         RESUMES_TABLE_NAME: !Ref ResumesTable
 
@@ -62,7 +61,6 @@ Resources:
       UserPoolId: !Ref UserPool
       ClientName: !Sub ${AWS::StackName}-${Environment}-WebClient
       GenerateSecret: false
-      # FIXED: Changed from [] to - format to fix YAML error
       ExplicitAuthFlows:
         - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_USER_SRP_AUTH
@@ -94,6 +92,7 @@ Resources:
             Identity:
               Header: Authorization
       Cors:
+        #todo limit CORS to the frontend origin before prod
         AllowOrigin: '''*'''
         AllowHeaders: '''Content-Type,Authorization'''
         AllowMethods: '''GET,POST,OPTIONS'''
@@ -106,8 +105,16 @@ Resources:
   uploadBucket:
     Type: AWS::S3::Bucket
     Properties:
-      # Explicit Name Required for the "String Trick" to work
       BucketName: !Sub ${AWS::StackName}-upload-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders:
@@ -170,8 +177,15 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  # --- Dead Letter Queue (for failed async Lambda invocations) ---
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-dlq
+      MessageRetentionPeriod: 1209600  # 14 days
+
   # ============================================================================
-  # 4. Functions (Fixed Dependencies)
+  # 4. Functions
   # ============================================================================
 
   # --- Upload Handler ---
@@ -182,7 +196,6 @@ Resources:
       Handler: upload.handler
       Environment:
         Variables:
-          # FIX: Use string construction, NOT !Ref
           UPLOADBUCKET_BUCKET_NAME: !Sub ${AWS::StackName}-upload-${AWS::AccountId}
       Events:
         ApiPOSTresumeupload:
@@ -197,7 +210,6 @@ Resources:
               Action:
                 - s3:PutObject
                 - s3:GetObject
-              # FIX: Use constructed ARN, NOT !GetAtt
               Resource: !Sub arn:aws:s3:::${AWS::StackName}-upload-${AWS::AccountId}/*
         - DynamoDBCrudPolicy:
             TableName: !Ref ResumesTable
@@ -208,16 +220,21 @@ Resources:
     Properties:
       CodeUri: src/lambda
       Handler: extraction.handler
+      EventInvokeConfig:
+        MaximumRetryAttempts: 2
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeadLetterQueue.Arn
       Environment:
         Variables:
-          # FIX: String construction
           UPLOAD_BUCKET_NAME: !Sub ${AWS::StackName}-upload-${AWS::AccountId}
           PARSED_BUCKET_NAME: !Sub ${AWS::StackName}-parsed-${AWS::AccountId}
       Events:
         S3NewPDF:
           Type: S3
           Properties:
-            Bucket: !Ref uploadBucket # This Ref is OK (Bucket -> Lambda link)
+            Bucket: !Ref uploadBucket
             Events: s3:ObjectCreated:*
             Filter:
               S3Key:
@@ -225,7 +242,6 @@ Resources:
                   - Name: suffix
                     Value: .pdf
       Policies:
-        # FIX: Manual Policies to avoid !Ref dependency
         - Statement:
             - Effect: Allow
               Action:
@@ -238,6 +254,8 @@ Resources:
               Resource: !Sub arn:aws:s3:::${AWS::StackName}-parsed-${AWS::AccountId}/*
         - DynamoDBCrudPolicy:
             TableName: !Ref ResumesTable
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt DeadLetterQueue.QueueName
 
   # --- Parser Handler ---
   ParserHandler:
@@ -249,7 +267,6 @@ Resources:
       Environment:
         Variables:
           BEDROCK_MODEL_ID: !Ref BedrockModelId
-          # FIX: String construction
           PARSED_BUCKET_NAME: !Sub ${AWS::StackName}-parsed-${AWS::AccountId}
       Events:
         S3NewRawFile:
@@ -276,7 +293,7 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: bedrock:InvokeModel
-              Resource: '*'
+              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}
 
   # --- Enhancement Handler ---
   EnhancementHandler:
@@ -288,7 +305,6 @@ Resources:
       Environment:
         Variables:
           BEDROCK_MODEL_ID: !Ref BedrockModelId
-          # FIX: String construction
           GENERATEDBUCKET_BUCKET_NAME: !Sub ${AWS::StackName}-generated-${AWS::AccountId}
           PARSED_BUCKET_NAME: !Sub ${AWS::StackName}-parsed-${AWS::AccountId}
       Events:
@@ -314,12 +330,13 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: bedrock:InvokeModel
-              Resource: '*'
+              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}
 
   # --- List Handler ---
   ListHandler:
     Type: AWS::Serverless::Function
     Properties:
+      MemorySize: 256
       CodeUri: src/lambda
       Handler: list.handler
       Environment:
@@ -340,11 +357,11 @@ Resources:
   DownloadHandler:
     Type: AWS::Serverless::Function
     Properties:
+      MemorySize: 256
       CodeUri: src/lambda
       Handler: download.handler
       Environment:
         Variables:
-          # FIX: String construction
           GENERATED_BUCKET_NAME: !Sub ${AWS::StackName}-generated-${AWS::AccountId}
       Events:
         ApiGETresumedownload:
