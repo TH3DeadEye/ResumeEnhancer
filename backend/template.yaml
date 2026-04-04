@@ -16,7 +16,7 @@ Parameters:
 
   BedrockModelId:
     Type: String
-    Default: us.anthropic.claude-3-5-haiku-20241022-v1:0
+    Default: us.anthropic.claude-3-5-sonnet-20241022-v2:0
     Description: Bedrock model ID for AI enhancement
 
   FrontendUrl:
@@ -293,7 +293,7 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: bedrock:InvokeModel
-              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}
+              Resource: '*'  # cross-region inference profiles route to unpredictable regions
 
   # --- Enhancement Handler ---
   EnhancementHandler:
@@ -330,7 +330,7 @@ Resources:
         - Statement:
             - Effect: Allow
               Action: bedrock:InvokeModel
-              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}
+              Resource: '*'  # cross-region inference profiles route to unpredictable regions
 
   # --- List Handler ---
   ListHandler:

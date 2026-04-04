@@ -11,7 +11,7 @@ from typing import List, Optional
 from utils import api_response
 
 # Env variables
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20240620-v1:0")
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-3-5-sonnet-20241022-v2:0")
 GENERATEDBUCKET_BUCKET_NAME = os.environ.get("GENERATEDBUCKET_BUCKET_NAME")
 PARSED_BUCKET_NAME = os.environ.get("PARSED_BUCKET_NAME")
 RESUMES_TABLE_NAME = os.environ.get("RESUMES_TABLE_NAME")
