@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check } from 'lucide-react';
+import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { FillButton } from '@/app/components/ui/fill-button';
 import { listResumes, downloadEnhancement, type Resume, type DownloadResult } from '@/lib/api';
@@ -192,14 +192,35 @@ export default function HistoryPage() {
           ))}
         </div>
       ) : filteredResumes.length === 0 ? (
-        /* Only show empty state once loading is confirmed complete */
-        <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '64px 24px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
-          <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: 'var(--text-disabled)' }} />
-          <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '6px' }}>No resumes found</p>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            {searchQuery || filterStatus !== 'all' ? 'Try adjusting your search or filter' : 'Upload your first resume to get started'}
-          </p>
-        </div>
+        /* Empty state — two branches:
+           a) No resumes at all → friendly CTA so users know what to do.
+           b) Filter/search returns zero → hint to clear the filter.       */
+        resumes.length === 0 ? (
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '64px 24px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+            <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: 'var(--text-disabled)' }} />
+            <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '6px' }}>No resumes yet</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Upload your first resume to get started
+            </p>
+            <Link href="/dashboard/upload">
+              <FillButton
+                className="inline-flex items-center gap-2 text-sm font-medium"
+                style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '10px 20px' }}
+              >
+                <Upload className="h-4 w-4" />
+                Upload Your First Resume
+              </FillButton>
+            </Link>
+          </div>
+        ) : (
+          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '48px 24px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+            <Search className="h-8 w-8 mx-auto mb-3" style={{ color: 'var(--text-disabled)' }} />
+            <p style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' }}>No results</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Try adjusting your search or filter
+            </p>
+          </div>
+        )
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filteredResumes.map((resume) => {
