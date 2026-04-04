@@ -21,16 +21,21 @@ def handler(event, context):
         print(f"Auth error: {str(e)}")
         return _response(500, {"error": "Auth check failed"})
 
-    # 2. Query DynamoDB for all resumes belonging to this user
+    # 2. Query DynamoDB for all resumes belonging to this user (with pagination)
     try:
         table = dynamodb.Table(RESUMES_TABLE_NAME)
-        result = table.query(
-            KeyConditionExpression=Key("user_id").eq(user_id)
-        )
-        items = result.get("Items", [])
+        items = []
+        result = table.query(KeyConditionExpression=Key("user_id").eq(user_id))
+        items.extend(result.get("Items", []))
+        while "LastEvaluatedKey" in result:
+            result = table.query(
+                KeyConditionExpression=Key("user_id").eq(user_id),
+                ExclusiveStartKey=result["LastEvaluatedKey"]
+            )
+            items.extend(result.get("Items", []))
     except Exception as e:
         print(f"DynamoDB query error: {str(e)}")
-        return _response(500, {"error": f"Failed to list resumes: {str(e)}"})
+        return _response(500, {"error": "Failed to list resumes"})
 
     # 3. Shape the response — include only the fields the frontend needs
     resumes = []

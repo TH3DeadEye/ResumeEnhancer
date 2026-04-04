@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check, Upload } from 'lucide-react';
+import { FileText, Download, Eye, Search, Sparkles, Clock, X, Check, Upload, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { FillButton } from '@/app/components/ui/fill-button';
 import { listResumes, downloadEnhancement, type Resume, type DownloadResult } from '@/lib/api';
@@ -253,6 +253,14 @@ export default function HistoryPage() {
 
                   {display === 'enhanced' && (
                     <>
+                      <Link href={`/dashboard/editor?resumeId=${resume.resume_id}`}>
+                        <FillButton
+                          className="inline-flex items-center gap-1.5 text-xs font-medium"
+                          style={{ backgroundColor: 'var(--accent)', color: 'white', borderRadius: 'var(--radius-md)', padding: '7px 13px' }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Build
+                        </FillButton>
+                      </Link>
                       <FillButton
                         onClick={() => handleView(resume.resume_id)}
                         disabled={isViewing || isPdfing}

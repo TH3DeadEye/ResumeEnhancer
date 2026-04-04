@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'node:https';
 
-const API_GATEWAY =
-  process.env.API_GATEWAY_URL ||
-  'https://p3xj2brlia.execute-api.us-west-2.amazonaws.com/Prod';
+const API_GATEWAY = process.env.API_GATEWAY_URL;
+if (!API_GATEWAY) throw new Error('API_GATEWAY_URL env var is not set');
 
 /**
  * Forward a request via node:https with family:4 (IPv4 only).

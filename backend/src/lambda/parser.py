@@ -3,7 +3,7 @@ import boto3
 import urllib.parse
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from langchain_aws import ChatBedrock
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -17,7 +17,7 @@ dynamodb = boto3.resource("dynamodb")
 # Env Variables
 PARSED_BUCKET_NAME = os.environ.get("PARSED_BUCKET_NAME")
 RESUMES_TABLE_NAME = os.environ.get("RESUMES_TABLE_NAME") 
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20240620-v1:0")
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-3-5-sonnet-20241022-v2:0")
 
 # --- Pydantic Models ---
 class WorkExperience(BaseModel):
@@ -51,8 +51,14 @@ class ResumeSchema(BaseModel):
     education: List[Education]
     skills: Skills
 
-def handler(event, context):  
-    try:  
+
+#handler
+def handler(event, context):
+    timestamp = datetime.now(timezone.utc).isoformat()
+    # Safe defaults so except block can always reference these
+    user_id, resume_id, output_key = "unknown", "unknown", None
+    table = dynamodb.Table(RESUMES_TABLE_NAME)
+    try:
         # 1. Download file from S3
         records = event["Records"][0]
         bucket = records['s3']['bucket']['name']
@@ -112,7 +118,7 @@ def handler(event, context):
             "user_id": user_id,
             "resume_id": resume_id,
             "parsed_data": structured_data,
-            "parsed_at": datetime.utcnow().isoformat()
+            "parsed_at": timestamp
         }
 
         s3.put_object(
@@ -124,7 +130,6 @@ def handler(event, context):
         print(f"Saved clean JSON to {output_key}")
         
         # 8. Update DynamoDB
-        table = dynamodb.Table(RESUMES_TABLE_NAME)
         table.update_item(
             Key={'user_id': user_id, 'resume_id': resume_id},
             UpdateExpression='SET #status = :status, clean_s3_key = :clean_key, updated_at = :ts',
@@ -132,7 +137,7 @@ def handler(event, context):
             ExpressionAttributeValues={
                 ':status': 'PARSED',
                 ':clean_key': output_key,
-                ':ts': datetime.utcnow().isoformat()
+                ':ts': timestamp
             }
         )
         print("DynamoDB updated.")
@@ -141,4 +146,18 @@ def handler(event, context):
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
+        if user_id != "unknown" and resume_id != "unknown":
+            try:
+                table.update_item(
+                    Key={'user_id': user_id, 'resume_id': resume_id},
+                    UpdateExpression='SET #status = :status, error_message = :err, updated_at = :ts',
+                    ExpressionAttributeNames={'#status': 'status'},
+                    ExpressionAttributeValues={
+                        ':status': 'FAILED',
+                        ':err': str(e),
+                        ':ts': timestamp
+                    }
+                )
+            except Exception:
+                print("Failed to update DynamoDB with FAILED status")
         raise e
