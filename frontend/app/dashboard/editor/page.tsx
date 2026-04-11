@@ -1,5 +1,6 @@
 'use client';
 
+import DOMPurify from 'dompurify';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -487,7 +488,7 @@ function EditorContent() {
     doc.querySelectorAll('font[size="7"]').forEach((el) => {
       const span = document.createElement('span');
       span.style.fontSize = `${pt}pt`;
-      span.innerHTML = (el as HTMLElement).innerHTML;
+      span.innerHTML = DOMPurify.sanitize((el as HTMLElement).innerHTML);
       el.parentNode?.replaceChild(span, el);
     });
     saveRange();
@@ -520,10 +521,10 @@ function EditorContent() {
       const displayName = raw
         ? raw.replace(/\.pdf$/i, '').replace(/[_\-]/g, ' ')
         : 'Your Full Name';
-      el.innerHTML = `
+      el.innerHTML = DOMPurify.sanitize(`
         <p style="text-align:center;font-size:22pt;font-weight:700;letter-spacing:-0.01em;font-family:'Georgia',serif;margin:0 0 5px;color:#111">${displayName}</p>
         <p style="text-align:center;font-size:10pt;font-family:'Georgia',serif;color:#333;margin:0">City, Province &nbsp;|&nbsp; your.email@example.com &nbsp;|&nbsp; <span style="color:#1a5fb4;text-decoration:underline">linkedin.com/in/yourprofile</span></p>
-      `;
+      `);
       return;
     }
 
@@ -552,10 +553,10 @@ function EditorContent() {
 
     if (!isBulletSection(name)) {
       // Prose section (Summary, Objective, Profile)
-      el.innerHTML = `<p style="margin:0">${improved[0] ?? ''}</p>`;
+      el.innerHTML = DOMPurify.sanitize(`<p style="margin:0">${improved[0] ?? ''}</p>`);
     } else if (isEntrySection(name)) {
       // Work Experience / Projects: job entry template + bullets from AI
-      el.innerHTML = `
+      el.innerHTML = DOMPurify.sanitize(`
         <div data-entry="true" style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
             <span style="font-weight:700;font-family:'Georgia',serif;font-size:11pt">Company Name — Job Title</span>
@@ -564,10 +565,10 @@ function EditorContent() {
           <ul style="margin:0;padding-left:1.4em">
             ${improved.map((l) => `<li>${l}</li>`).join('')}
           </ul>
-        </div>`;
+        </div>`);
     } else {
       // Other bullet sections (Skills, etc.)
-      el.innerHTML = `<ul style="margin:0;padding-left:1.4em">${improved.map((l) => `<li>${l}</li>`).join('')}</ul>`;
+      el.innerHTML = DOMPurify.sanitize(`<ul style="margin:0;padding-left:1.4em">${improved.map((l) => `<li>${l}</li>`).join('')}</ul>`);
     }
   }, []);
 
@@ -683,7 +684,7 @@ function EditorContent() {
 
     if (!isBulletSection(sectionName)) {
       // Prose replacement (Summary, Objective)
-      el.innerHTML = `<p style="margin:0">${improved}</p>`;
+      el.innerHTML = DOMPurify.sanitize(`<p style="margin:0">${improved}</p>`);
     } else {
       // Bullet section: try to find and update the original bullet
       const lis = Array.from(el.querySelectorAll('li'));

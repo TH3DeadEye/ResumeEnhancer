@@ -14,7 +14,6 @@ import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { SplitText } from "gsap/SplitText";
 import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { TextPlugin } from "gsap/TextPlugin";
-import { Observer } from "gsap/Observer";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(
@@ -23,7 +22,6 @@ if (typeof window !== "undefined") {
     SplitText,
     ScrambleTextPlugin,
     TextPlugin,
-    Observer
   );
 }
 
@@ -34,5 +32,4 @@ export {
   SplitText,
   ScrambleTextPlugin,
   TextPlugin,
-  Observer,
 };

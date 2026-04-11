@@ -67,6 +67,16 @@ async function proxyRequest(
   let body: string | null = null;
   if (request.method === 'POST' || request.method === 'PUT') {
     body = await request.text();
+
+    // Reject oversized bodies before forwarding — base64 of a 10 MB PDF is ~13.3 MB
+    const BODY_LIMIT = 15 * 1024 * 1024; // 15 MB
+    if (body.length > BODY_LIMIT) {
+      return NextResponse.json(
+        { message: 'Request too large' },
+        { status: 413 },
+      );
+    }
+
     forwardHeaders['Content-Length'] = Buffer.byteLength(body).toString();
   }
 
@@ -82,7 +92,8 @@ async function proxyRequest(
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error(`[proxy] ${request.method} ${targetUrl} failed:`, err);
+    // Log the method and path only — do not log the full target URL (contains API_GATEWAY_URL)
+    console.error(`[proxy] ${request.method} ${path} failed:`, err instanceof Error ? err.message : err);
     return NextResponse.json(
       { message: 'Proxy error — could not reach API Gateway' },
       { status: 502 },

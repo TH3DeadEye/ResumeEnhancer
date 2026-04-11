@@ -9,6 +9,7 @@
  * html2canvas (used internally by html2pdf) can render them correctly.
  */
 
+import DOMPurify from 'dompurify';
 import type { DownloadResult } from './api';
 
 // ── CSS variable resolution ──────────────────────────────────────────────────
@@ -364,7 +365,7 @@ export async function generateEnhancementPDF(
     padding: 40px 48px;
     box-sizing: border-box;
   `;
-  container.innerHTML = html;
+  container.innerHTML = DOMPurify.sanitize(html);
   document.body.appendChild(container);
 
   try {
